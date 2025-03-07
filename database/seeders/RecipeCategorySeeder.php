@@ -2,17 +2,14 @@
 
 namespace Database\Seeders;
 
-use App\Models\RecipeCategory;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Recipes\RecipeCategory;
+use App\Models\Recipes\RecipeCategoryModel;
 use Illuminate\Database\Seeder;
 
 class RecipeCategorySeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
-    public function run(): void
+    public function run()
     {
-        RecipeCategory::factory()->count(10)->create();
+        RecipeCategoryModel::factory()->count(5)->create();
     }
 }

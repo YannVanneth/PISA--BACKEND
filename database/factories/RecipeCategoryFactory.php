@@ -2,18 +2,18 @@
 
 namespace Database\Factories;
 
-use App\Models\RecipeCategory;
+use App\Models\Recipes\RecipeCategoryModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class RecipeCategoryFactory extends Factory
 {
-    protected $model = RecipeCategory::class;
+    protected $model = RecipeCategoryModel::class;
 
-    public function definition(): array
+    public function definition()
     {
         return [
-            'recipe_categories_km' => $this->faker->name(),
-            'recipe_categories_en' => $this->faker->name(),
+            'recipe_categories_km' => $this->faker->word,
+            'recipe_categories_en' => $this->faker->word,
             'imageURl' => $this->faker->imageUrl(),
         ];
     }
