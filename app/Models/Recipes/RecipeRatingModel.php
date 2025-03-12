@@ -10,6 +10,8 @@ class RecipeRatingModel extends Model
 {
     use HasFactory;
 
+    protected $table = 'recipes_rating';
+
     protected $primaryKey = 'recipes_rating_id';
 
     protected $fillable = [

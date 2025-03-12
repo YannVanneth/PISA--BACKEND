@@ -10,7 +10,7 @@ class CookingStepController extends Controller
 {
     public function index()
     {
-        return CookingStepModel::all();
+        return new CookingStepModel([CookingStepModel::all()]);
     }
 
     public function store(Request $request)
@@ -22,7 +22,8 @@ class CookingStepController extends Controller
             'cooking_instruction_km' => 'required|string',
         ]);
 
-        return CookingStepModel::create($request->all());
+        $cookingStep = CookingStepModel::create($request->all());
+        return new CookingStepModel($cookingStep);
     }
 
     public function show($id)

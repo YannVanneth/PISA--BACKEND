@@ -9,6 +9,8 @@ class RecipeCategoryModel extends Model
 {
     use HasFactory;
 
+    protected $table = 'recipe_categories';
+
     protected $primaryKey = 'recipe_categories_id';
 
     protected $fillable = [

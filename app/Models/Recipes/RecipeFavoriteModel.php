@@ -10,6 +10,8 @@ class RecipeFavoriteModel extends Model
 {
     use HasFactory;
 
+    protected $table = 'recipes_favorite';
+
     protected $primaryKey = 'recipes_favorite_id';
 
     protected $fillable = [

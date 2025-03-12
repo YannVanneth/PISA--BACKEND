@@ -10,6 +10,8 @@ class UserCommentModel extends Model
 {
     use HasFactory;
 
+    protected $table = 'users_comment';
+
     protected $primaryKey = 'users_comment_id';
 
     protected $fillable = [

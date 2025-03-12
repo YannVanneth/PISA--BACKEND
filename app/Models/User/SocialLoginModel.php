@@ -9,6 +9,8 @@ class SocialLoginModel extends Model
 {
     use HasFactory;
 
+    protected $table = 'social_login';
+
     protected $primaryKey = 'social_login_id';
 
     protected $fillable = [

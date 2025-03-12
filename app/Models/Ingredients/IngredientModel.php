@@ -10,6 +10,8 @@ class IngredientModel extends Model
 {
     use HasFactory;
 
+    protected $table = 'ingredients';
+
     protected $primaryKey = 'ingredients_id';
 
     protected $fillable = [

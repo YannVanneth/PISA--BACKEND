@@ -12,7 +12,7 @@ class IngredientFactory extends Factory
     public function definition()
     {
         return [
-            'recipes_id' => \App\Models\RecipesModel::factory(),
+            'recipes_id' => IngredientModel::factory(),
             'ingredients_name_en' => $this->faker->word,
             'ingredients_name_km' => $this->faker->word,
             'ingredients_quantity' => $this->faker->numberBetween(1, 10),

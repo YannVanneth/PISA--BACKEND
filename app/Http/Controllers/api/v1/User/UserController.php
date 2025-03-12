@@ -3,36 +3,36 @@
 namespace App\Http\Controllers\api\v1\User;
 
 use App\Http\Controllers\Controller;
-use App\Models\User\User;
+use App\Models\User\UserModel;
 use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
     public function index()
     {
-        return User::all();
+        return UserModel::all();
     }
 
     public function store(Request $request)
     {
-        return User::create($request->all());
+        return UserModel::create($request->all());
     }
 
     public function show($id)
     {
-        return User::findOrFail($id);
+        return UserModel::findOrFail($id);
     }
 
     public function update(Request $request, $id)
     {
-        $user = User::findOrFail($id);
+        $user = UserModel::findOrFail($id);
         $user->update($request->all());
         return $user;
     }
 
     public function destroy($id)
     {
-        User::destroy($id);
+        UserModel::destroy($id);
         return response()->noContent();
     }
 }

@@ -3,14 +3,14 @@
 namespace App\Http\Controllers\api\v1\Recipes;
 
 use App\Http\Controllers\Controller;
-use App\Models\Recipes\RecipeCategory;
+use App\Models\Recipes\RecipeCategoryModel;
 use Illuminate\Http\Request;
 
 class RecipeCategoryController extends Controller
 {
     public function index()
     {
-        return RecipeCategory::all();
+        return RecipeCategoryModel::all();
     }
 
     public function store(Request $request)
@@ -21,24 +21,24 @@ class RecipeCategoryController extends Controller
             'imageURl' => 'required|string',
         ]);
 
-        return RecipeCategory::create($request->all());
+        return RecipeCategoryModel::create($request->all());
     }
 
     public function show($id)
     {
-        return RecipeCategory::findOrFail($id);
+        return RecipeCategoryModel::findOrFail($id);
     }
 
     public function update(Request $request, $id)
     {
-        $recipeCategory = RecipeCategory::findOrFail($id);
+        $recipeCategory = RecipeCategoryModel::findOrFail($id);
         $recipeCategory->update($request->all());
         return $recipeCategory;
     }
 
     public function destroy($id)
     {
-        RecipeCategory::destroy($id);
+        RecipeCategoryModel::destroy($id);
         return response()->noContent();
     }
 }

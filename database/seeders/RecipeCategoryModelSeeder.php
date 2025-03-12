@@ -2,11 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\Recipes\RecipeCategory;
 use App\Models\Recipes\RecipeCategoryModel;
 use Illuminate\Database\Seeder;
 
-class RecipeCategorySeeder extends Seeder
+class RecipeCategoryModelSeeder extends Seeder
 {
     public function run()
     {

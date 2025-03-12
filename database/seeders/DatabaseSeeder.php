@@ -9,7 +9,7 @@ class DatabaseSeeder extends Seeder
     public function run()
     {
         $this->call([
-            RecipeCategorySeeder::class,
+            RecipeCategoryModelSeeder::class,
             RecipeSeeder::class,
             IngredientSeeder::class,
             CookingInstructionSeeder::class,

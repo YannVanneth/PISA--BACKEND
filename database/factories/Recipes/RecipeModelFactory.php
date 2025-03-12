@@ -1,13 +1,14 @@
 <?php
 
-namespace Database\Factories;
+namespace Database\Factories\Recipes;
 
-use App\Models\RecipesModel;
+use App\Models\Recipes\RecipeCategoryModel;
+use App\Models\Recipes\RecipeModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-class RecipeFactory extends Factory
+class RecipeModelFactory extends Factory
 {
-    protected $model = RecipesModel::class;
+    protected $model = RecipeModel::class;
 
     public function definition()
     {
@@ -21,7 +22,7 @@ class RecipeFactory extends Factory
             'recipes_created_by' => $this->faker->name,
             'recipes_view_counts' => $this->faker->numberBetween(0, 1000),
             'recipes_duration' => $this->faker->time('H:i:s'),
-            'recipe_categories_id' => \App\Models\Recipes\RecipeCategory::factory(),
+            'recipe_categories_id' => RecipeCategoryModel::factory(),
         ];
     }
 }
