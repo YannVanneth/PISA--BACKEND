@@ -10,18 +10,29 @@ use Illuminate\Support\Facades\Route;
 
 # Authentication routes
 Route::prefix('auth')->group(function () {
-//    Route::post('/', [AuthController::class, 'register']);
 
+    # normal login authentication routes
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/register', [AuthController::class, 'register']);
+
+    # Google OAuth routes
+
     Route::post('/google/callback', [AuthController::class, 'handleGoogleCallback']);
+    Route::post('/google/logout', [AuthController::class, 'logout']);
+
+    # Facebook OAuth routes
+
+    Route::post('/facebook/callback', [AuthController::class, 'handleFacebookCallback']);
+    Route::post('/facebook/logout', [AuthController::class, 'logout']);
 });
 
 # API Version 1 Routes (Protected with auth:sanctum)
-Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
+Route::prefix('v1')->group(function () {
     Route::resource('cookingInstructions', CookingInstructionController::class);
     Route::resource('cookingSteps', CookingStepController::class);
     Route::resource('recipeCategories', RecipeCategoryController::class);
     Route::resource('recipes', RecipesController::class);
     Route::resource('ingredients', IngredientController::class);
 });
+
+//->middleware(['auth:sanctum'])->

@@ -17,22 +17,38 @@ class IngredientController extends Controller
     // Create a new ingredient
     public function store(Request $request)
     {
-        $request->validate([
-            'recipes_id' => 'required|exists:recipes,recipes_id',
-            'ingredients_name_en' => 'required|string',
-            'ingredients_name_km' => 'required|string',
-            'ingredients_quantity' => 'required|integer',
-            'ingredients_unit' => 'required|string',
-            'ingredients_imageURL' => 'required|string',
-        ]);
+        try{
+            $request->validate([
+                'recipes_id' => 'required|exists:recipes,recipes_id',
+                'ingredients_name_en' => 'required|string',
+                'ingredients_name_km' => 'required|string',
+                'ingredients_quantity' => 'required|integer',
+                'ingredients_unit' => 'required|string',
+                'ingredients_imageURL' => 'required|string',
+            ]);
 
-        return IngredientModel::create($request->all());
+            return IngredientModel::create($request->all());
+        }catch (\Exception $exception){
+            return response()->json(['message' => $exception->getMessage()], 500);
+        }
+
     }
 
     // Get a specific ingredient
-    public function show($id)
+    public function show($ingredients_id)
     {
-        return IngredientModel::findOrFail($id);
+        try{
+            $ingredients_found = IngredientModel::find($ingredients_id);
+
+            if($ingredients_found){
+                return $ingredients_found;
+            }
+
+            return response()->json(['message' => 'Ingredient not found'], 404);
+        }catch (\Exception $exception){
+            return response()->json(['message' => $exception->getMessage()], 500);
+        }
+
     }
 
     // Update an ingredient

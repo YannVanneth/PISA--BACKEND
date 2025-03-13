@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User\SocialLoginModel;
+use App\Models\User\UserModel;
 use App\Models\User\UserProfileModel;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\Request;
@@ -139,43 +140,68 @@ class AuthController extends Controller
                 if($this->SaveToDatabase($tokenInfo, $accessToken, 'google')){
                     return response()->json([
                         'message' => 'Login with Google successful',
-                        'token_info' => $tokenInfo->getBody()->getContents(),
                         'access_token' => $accessToken,
-                        'id_token' => $idToken,
-                    ]);
-                }else{
+                    ], 200);
+                }
+                else
+                {
                     return response()->json([
-                        'message' => 'insert data to database failed',
-                    ]);
+                        'message' => 'Login with Facebook failed : save to database',
+                    ], 500);
                 }
             }
 
             return response()->json([
                'message' => 'Login with Google failed',
-            ]);
+            ], 401);
 
 
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 401);
         }
     }
+
     // Handle Facebook callback
     public function handleFacebookCallback(Request $request)
     {
         $accessToken = $request->input('access_token');
 
        try{
-
-
            $tokenInfo = Http::withOptions(
                ['verify' => false,]
            )->get('https://graph.facebook.com/me?fields=id,name,email,picture&access_token=' . $accessToken);
 
-           return response()->json(['data' => $tokenInfo->getBody()->getContents()], 401);
+           if ($tokenInfo->getStatusCode() == 200) {
+
+               if($this->SaveToDatabase($tokenInfo, $accessToken, 'facebook')){
+                     return response()->json([
+                          'message' => 'Login with Facebook successful',
+                          'access_token' => $accessToken,
+                     ], 200);
+               }
+               else
+               {
+                   return response()->json([
+                       'message' => 'Login with Facebook failed : save to database',
+                   ], 500);
+               }
+           }
+
+
+           return response()->json([
+               'message' => 'login with Facebook failed',
+           ], 401);
 
        }catch (\Exception $e){
            return response()->json(['error' => $e->getMessage()], 401);
        }
+    }
+
+    # Logout
+    public function logout(Request $request)
+    {
+        $request->user()->currentAccessToken()->delete();
+        return response()->json(['message' => 'Logout successful'], 200);
     }
 
     private function SaveToDatabase($tokenInfo, $accessToken, $provider) : bool

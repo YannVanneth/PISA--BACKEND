@@ -17,6 +17,7 @@ class RecipeModel extends Model
     protected $table = 'recipes';
 
     protected $fillable = [
+        'recipes_id',
         'recipes_title_km',
         'recipes_title_en',
         'recipes_description_km',

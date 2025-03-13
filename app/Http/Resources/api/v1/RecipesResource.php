@@ -15,6 +15,7 @@ class RecipesResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'recipes_id' => $this->recipes_id,
             'recipes_title_km' => $this->recipes_title_km,
             'recipes_title_en' => $this->recipes_title_en,
             'recipes_description_km' => $this->recipes_description_km,
