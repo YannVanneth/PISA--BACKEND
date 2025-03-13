@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\api\v1\Recipes;
 
-use App\Models\RecipeCategory;
-use App\Models\RecipesModel;
+use App\Http\Controllers\Controller;
+use App\Http\Resources\api\v1\RecipesResource;
+use App\Models\Recipes\RecipeModel;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -15,34 +16,31 @@ class RecipesController extends Controller
      * View recipe by category
      * */
 
-    public function showByCategory(string $category_id) : JsonResponse
-    {
-        $category = RecipesModel::query()->where('recipe_categories_id', $category_id);
-
-        if($category->count() > 0){
-            return response()->json($category->get());
-        }
-        return response()->json(['message' => 'Category not found'], 404);
-    }
-
-    public function indexCategory() : JsonResponse
-    {
-        return response()->json(RecipeCategory::all());
-    }
-
-
     /**
      * Display a listing of the resource.
      */
-    public function index() : JsonResponse
+    public function index()
     {
-        return response()->json(RecipesModel::all());
+        $data = RecipeModel::with('ingredients')->get();;
+
+        if($data->isEmpty()){
+            return response()->json([
+                'message' => 'No recipes found',
+                'data' => RecipesResource::collection($data)
+            ], 404);
+        }
+
+        $data = RecipesResource::collection($data);
+
+        return response()->json(
+           $data
+        );
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function create(Request $request) : JsonResponse
+    public function store(Request $request) : JsonResponse
     {
         try {
 
@@ -79,7 +77,7 @@ class RecipesController extends Controller
 
                 $validatedData['files'] = $fileData;
                 # insert to database
-                RecipesModel::create($validatedData);
+                RecipeModel::create($validatedData);
 
                 return response()->json([
                     'data' => $validatedData,
@@ -87,7 +85,7 @@ class RecipesController extends Controller
             }
 
             # insert to database
-            RecipesModel::create($validatedData);
+            RecipeModel::create($validatedData);
 
             return response()->json($validatedData, 200);
 
@@ -108,7 +106,7 @@ class RecipesController extends Controller
      */
     public function show(string $id) : JsonResponse
     {
-        $data = RecipesModel::query()->where('recipes_id', $id)->first();
+        $data = RecipeModel::query()->where('recipes_id', $id)->first();
 
         if($data != null){
             return response()->json($data);
@@ -155,19 +153,19 @@ class RecipesController extends Controller
 
                 $validatedData['files'] = $fileData;
 
-                $found = RecipesModel::query()->find($id);
+                $found = RecipeModel::query()->find($id);
 
                 if($found != null){
-                    RecipesModel::query()->updateOrCreate(['recipes_id' => $id], $validatedData);
+                    RecipeModel::query()->updateOrCreate(['recipes_id' => $id], $validatedData);
                 }
 
 
             }
             else{
-                $found = RecipesModel::query()->find($id);
+                $found = RecipeModel::query()->find($id);
 
                 if($found != null){
-                    RecipesModel::query()->updateOrCreate(['recipes_id' => $id], $validatedData);
+                    RecipeModel::query()->updateOrCreate(['recipes_id' => $id], $validatedData);
                 }
             }
 
@@ -186,10 +184,10 @@ class RecipesController extends Controller
      */
     public function destroy(string $id) : JsonResponse
     {
-        $found = RecipesModel::query()->find($id);
+        $found = RecipeModel::query()->find($id);
 
         if($found != null){
-            RecipesModel::query()->where('recipes_id', $id)->delete();
+            RecipeModel::query()->where('recipes_id', $id)->delete();
             return response()->json(["message" => "Recipes updated successfully"],200);
         }
        return response()->json(['message' => 'Recipes not found!'], 404);

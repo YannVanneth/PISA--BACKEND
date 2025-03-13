@@ -11,17 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-
         Schema::create('user_profile', function (Blueprint $table) {
             $table->id('user_profile_id');
             $table->string('first_name');
             $table->string('last_name');
-            $table->string('imageURL');
+            $table->string('imageURL')->nullable();
             $table->string('email');
-            $table->string('phone_number');
-            $table->boolean('is_verified');
-            $table->string('otp_code');
-            $table->dateTime('otp_code_expire_at');
+            $table->string('phone_number')->nullable();
+            $table->boolean('is_verified')->default(false);
+            $table->string('otp_code')->nullable();
+            $table->dateTime('otp_code_expire_at')->nullable();
             $table->timestamps();
         });
 
@@ -31,7 +30,6 @@ return new class extends Migration
             $table->string('password');
             $table->foreignId('profile_id')
                 ->constrained('user_profile', 'user_profile_id');
-            $table->rememberToken();
             $table->timestamps();
         });
 
@@ -41,7 +39,7 @@ return new class extends Migration
             $table->string('social_login_provider_id')->unique()->nullable();
             $table->foreignId('profile_id')
                 ->constrained('user_profile', 'user_profile_id');
-            $table->string('access_token');
+            $table->text('access_token');
             $table->timestamps();
         });
 
