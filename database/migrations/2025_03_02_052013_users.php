@@ -21,6 +21,7 @@ return new class extends Migration
             $table->boolean('is_verified')->default(false);
             $table->string('otp_code')->nullable();
             $table->dateTime('otp_code_expire_at')->nullable();
+            $table->string('provider')->nullable();
             $table->timestamps();
         });
 

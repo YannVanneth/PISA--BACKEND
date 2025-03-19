@@ -11,7 +11,6 @@ class UserProfileModel extends Model
 {
     use HasFactory;
 
-
     protected $table = 'user_profile';
 
     protected $primaryKey = 'user_profile_id';
@@ -21,6 +20,7 @@ class UserProfileModel extends Model
             'last_name',
             'imageURL',
             'email',
+            'provider',
             'phone_number',
             'is_verified',
             'otp_code',

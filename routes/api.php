@@ -18,6 +18,7 @@ Route::prefix('auth')->group(function () {
     # normal login authentication routes
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/cancelRegistration', [AuthController::class, 'cancelRegistration']);
 
     # Google OAuth routes
 
@@ -30,10 +31,8 @@ Route::prefix('auth')->group(function () {
     Route::post('/facebook/logout', [AuthController::class, 'logout']);
 
 
-    Route::post('/verifyOTP', [MailController::class, 'verifyOTP']);
-    Route::post('/RegisterVerifyOTP', [MailController::class, 'RegisterMail']);
-
-
+    Route::get('/verifyOTP', [MailController::class, 'verifyOTP']);
+    Route::get('/RegisterVerifyOTP', [MailController::class, 'RegisterMail']);
 
 });
 
@@ -46,6 +45,7 @@ Route::prefix('v1')->group(callback: function () {
     Route::resource('ingredients', IngredientController::class);
     Route::resource('wishlists',WishlistController::class);
     Route::resource('userProfile', UserProfileController::class);
+    Route::get('userProfile', [UserProfileController::class, 'checkExistingUser']);
 
 
     Route::get('search', [SearchController::class, 'index']);

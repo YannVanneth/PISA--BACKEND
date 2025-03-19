@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\mail;
 
+use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Controller;
 use App\Mail\VerifyOTPMail;
 use App\Models\User\UserProfileModel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail as MailFacade;
 
 class MailController extends Controller
@@ -41,11 +43,8 @@ class MailController extends Controller
     public function RegisterMail(Request $request)
     {
         try {
-            $request->validate([
-                'email' => 'required|email'
-            ]);
 
-            $receiver = $request->input('email');
+            $receiver = $request->query('email');
 
             $user = UserProfileModel::where('email', $receiver)->first();
 
@@ -65,14 +64,10 @@ class MailController extends Controller
 
     public function verifyOTP(Request $request){
         try {
-            $request->validate([
-                'email' => 'required|email',
-                'otp_code' => 'required',
-            ]);
 
             $user = UserProfileModel::where([
-                'email' => $request->email,
-                'otp_code' => $request->otp_code
+                'email' => $request->query('email'),
+                'otp_code' => $request->query('otp_code')
             ])->first();
 
             if (!$user) {

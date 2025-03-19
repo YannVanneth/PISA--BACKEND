@@ -9,11 +9,42 @@ use App\Models\User\UserProfileModel;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Http;
 class AuthController extends Controller
 {
+    public function cancelRegistration(Request $request)
+    {
+        try {
+
+            $request->validate([
+                'email' => 'required|email',
+            ]);
+            $email = $request->input('email');
+
+            DB::transaction(function () use ($email) {
+                DB::table('users')
+                    ->whereIn('profile_id', function ($query) use ($email) {
+                        $query->select('user_profile_id')
+                            ->from('user_profile')
+                            ->where('email', $email)
+                            ->where('is_verified', 0);
+                    })
+                    ->delete();
+
+                DB::table('user_profile')
+                    ->where('email', $email)
+                    ->where('is_verified', 0)
+                    ->delete();
+            });
+
+            return response()->json(['message' => 'Registration canceled.', 'isCanceled' => true], );
+        }catch (\Exception $exception){
+            return response()->json(['error' => $exception->getMessage()], 500);
+        }
+    }
     // Register a new user
     public function register(Request $request): \Illuminate\Http\JsonResponse
     {
@@ -27,18 +58,26 @@ class AuthController extends Controller
         ]);
 
         // check existing user
-        $this->checkExistingUser($request);
+        if($this->checkExistingUser($request)){
+            return response()->json(['message' => 'User already exists', 'is_available' => false], 200);
+        };
 
         // Create user profile
-        $userProfile = UserProfileModel::create([
-            'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
-            'email' => $request->email,
-            'is_verified' => false,
+        $userProfile = UserProfileModel::updateOrCreate(
+            [
+                'email' => $request->email,
+            ]
+            ,[
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'email' => $request->email,
+                'is_verified' => false,
         ]);
 
         // Create user
-        $user = UserModel::create([
+        $user = UserModel::updateOrCreate([
+            'username' => $request->username,
+        ],[
             'username' => $request->username,
             'password' => Hash::make($request->password),
             'profile_id' => $userProfile->user_profile_id,
@@ -48,9 +87,8 @@ class AuthController extends Controller
         $otp = $this->requestOTPCode();
         $userProfile->update([
             'otp_code' => $otp,
-            'otp_code_expire_at' => now()->addMinutes(30),
+            'otp_code_expire_at' => now()->addMinutes(10),
         ]);
-
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -143,22 +181,46 @@ class AuthController extends Controller
                 'https://oauth2.googleapis.com/tokeninfo?id_token=' . $idToken);
 
             if ($tokenInfo->getStatusCode() == 200) {
-                if($this->SaveToDatabase($tokenInfo, $accessToken, 'google')){
 
-                    $user = UserProfileModel::where('email', $tokenInfo->json('email'))->first();
+                $userProfile = UserProfileModel::updateOrCreate(
+                    [
+                        'email' => $tokenInfo->json('email'),
+                        'provider' => 'google',
+                    ],
+                    [
+                        'first_name' => $tokenInfo->json('given_name'),
+                        'last_name' => $tokenInfo->json('family_name'),
+                        'imageURL' => $tokenInfo->json('picture'),
+                        'email' => $tokenInfo->json('email'),
+                        'phone_number' => null,
+                        'is_verified' => true,
+                        'otp_code' => null,
+                        'otp_code_expire_at' => null,
+                    ]
+                );
 
-                    return response()->json([
-                        'message' => 'Login with Google successful',
+                SocialLoginModel::updateOrCreate(
+                    [
+                        'social_login_provider_id' => $tokenInfo->json('sub'),
+                        'social_login_provider' => 'google',
+                    ],
+                    [
+                        'profile_id' => $userProfile->user_profile_id,
+                        'social_login_provider_id' => $tokenInfo->json('sub'),
                         'access_token' => $accessToken,
-                        'user_profile_id' => $user->user_profile_id,
-                    ], 200);
-                }
-                else
-                {
-                    return response()->json([
-                        'message' => 'Login with Facebook failed : save to database',
-                    ], 500);
-                }
+                    ]
+                );
+
+                $user = UserProfileModel::where([
+                    'email' => $tokenInfo->json('email'),
+                    'provider' => 'google',
+                ])->first();
+
+                return response()->json([
+                    'message' => 'Login with Google successful',
+                    'access_token' => $accessToken,
+                    'user_profile_id' => $user->user_profile_id,
+                ], 200);
             }
 
             return response()->json([
@@ -183,18 +245,52 @@ class AuthController extends Controller
 
            if ($tokenInfo->getStatusCode() == 200) {
 
-               if($this->SaveToDatabase($tokenInfo, $accessToken, 'facebook')){
-                     return response()->json([
-                          'message' => 'Login with Facebook successful',
-                          'access_token' => $accessToken,
-                     ], 200);
-               }
-               else
-               {
-                   return response()->json([
-                       'message' => 'Login with Facebook failed : save to database',
-                   ], 500);
-               }
+               $firstName = explode(' ', $tokenInfo->json('name'))[0];
+               $lastName = explode(' ', $tokenInfo->json('name'))[1];
+               $picture = $tokenInfo->json('picture');
+               $picture = $picture['data'];
+               $picture = $picture['url'];
+
+               $userProfile = UserProfileModel::updateOrCreate(
+                   [
+                       'email' => $tokenInfo->json('email'),
+                       'provider' => 'facebook',
+                   ],
+                   [
+                       'first_name' => $firstName,
+                       'last_name' => $lastName,
+                       'imageURL' => $picture,
+                       'email' => $tokenInfo->json('email'),
+                       'phone_number' => null,
+                       'is_verified' => true,
+                       'otp_code' => null,
+                       'otp_code_expire_at' => null,
+                   ]
+               );
+
+               SocialLoginModel::updateOrCreate(
+                   [
+                       'social_login_provider_id' => $tokenInfo->json('id'),
+                       'social_login_provider' => 'facebook',
+                   ],
+                   [
+                       'social_login_provider_id' => $tokenInfo->json('id'),
+                       'access_token' => $accessToken,
+                       'profile_id' => $userProfile->user_profile_id,
+                   ]
+               );
+
+
+               $user = UserProfileModel::where([
+                   'email' => $tokenInfo->json('email'),
+                   'imageURL' => $picture,
+               ])->first();
+
+               return response()->json([
+                   'user_profile_id' => $user->user_profile_id,
+                   'message' => 'Login with Facebook successful',
+                   'access_token' => $accessToken,
+               ], 200);
            }
 
 
@@ -214,67 +310,14 @@ class AuthController extends Controller
         return response()->json(['message' => 'Logout successful'], 200);
     }
 
-    private function SaveToDatabase($tokenInfo, $accessToken, $provider) : bool
-    {
-        try{
-            $userProfile = UserProfileModel::updateOrCreate(
-                [
-                    'email' => $tokenInfo->json('email'),
-                ],
-                [
-                    'first_name' => $tokenInfo->json('given_name'),
-                    'last_name' => $tokenInfo->json('family_name'),
-                    'imageURL' => $tokenInfo->json('picture'),
-                    'email' => $tokenInfo->json('email'),
-                    'phone_number' => null,
-                    'is_verified' => false,
-                    'otp_code' => null,
-                    'otp_code_expire_at' => null,
-                ]
-            );
-
-            SocialLoginModel::updateOrCreate(
-                [
-                    'profile_id' => $userProfile->user_profile_id
-                ],
-                [
-                    'social_login_provider' => $provider,
-                    'social_login_provider_id' => rand(1000, 9999),
-                    'access_token' => $accessToken,
-                ]
-            );
-
-            return true;
-        }catch (\Exception $exception){
-            return false;
-        }
-    }
-
     private function requestOTPCode()
     {
         return rand(1000, 9999);
     }
+
     private function checkExistingUser(Request $request)
     {
-        try{
-
-            $request->validate([
-                'email' => 'required|email',
-                'username' => 'required|string'
-            ]);
-
-            $user = UserProfileModel::where('email', $request->email)->first();
-            $username = UserModel::where('username', $request->username)->first();
-
-            if ($user || $username) {
-                return response()->json([
-                    'message' => 'User already exists',
-                    'is_available' => false
-                ], 200);
-            }
-
-        }catch (\Exception $exception){
-            return response()->json(['error' => $exception->getMessage(), 'message' => 'Oops! Something went wrong.'], 500);
-        }
+        return UserModel::where('username', $request->username)->exists() || UserProfileModel::where('email', $request->email)->exists();
     }
+
 }
