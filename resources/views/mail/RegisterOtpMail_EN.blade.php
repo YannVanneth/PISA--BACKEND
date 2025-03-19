@@ -230,15 +230,15 @@
         </div>
 
         <div class="email-body">
-            <p class="greeting">Hello John,</p>
+            <p class="greeting">Dear {{ $username }},</p>
 
-            <p class="message">We've received a request to access your account. To ensure it's really you and protect your account, please use the verification code below.</p>
+            <p class="message">{{$emailMessage ?? "We've received a request to access your account. To ensure it's really you and protect your account, please use the verification code below."}}</p>
 
             <div class="otp-container">
                 <div class="otp-box">
                     <div class="otp-label">Verification Code</div>
-                    <div class="otp-code">5239</div>
-                    <div class="expiry-text">Expires in 10 minutes</div>
+                    <div class="otp-code">{{ $otp_code }}</div>
+                    <div class="expiry-text">Expires in {{ $expire_at ?? "10"}} minutes</div>
                 </div>
             </div>
 

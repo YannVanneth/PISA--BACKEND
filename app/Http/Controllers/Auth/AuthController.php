@@ -19,12 +19,15 @@ class AuthController extends Controller
     {
         try {
         $request->validate([
-            'username' => 'required|string|unique:users',
-            'email' => 'required|email|unique:user_profile,email',
+            'username' => 'required|string',
+            'email' => 'required|email',
             'password' => 'required|string|min:8',
             'first_name' => 'required|string',
             'last_name' => 'required|string',
         ]);
+
+        // check existing user
+        $this->checkExistingUser($request);
 
         // Create user profile
         $userProfile = UserProfileModel::create([
@@ -42,7 +45,7 @@ class AuthController extends Controller
         ]);
 
         // Generate OTP (for email verification)
-        $otp = rand(100000, 999999);
+        $otp = $this->requestOTPCode();
         $userProfile->update([
             'otp_code' => $otp,
             'otp_code_expire_at' => now()->addMinutes(30),
@@ -55,8 +58,9 @@ class AuthController extends Controller
             'message' => 'User registered successfully. Please verify your email.',
             'user' => $user,
             'token' => $token,
+            'is_available' => true,
             'token_type' => 'bearer',
-        ], 201);
+        ], 200);
         }catch (\Exception $exception){
             return response()->json(['error' => $exception->getMessage()], 500);
         }
@@ -73,7 +77,6 @@ class AuthController extends Controller
         if (Auth::attempt(['username' => $request->username, 'password' => $request->password])) {
             $user = Auth::user();
             $token = $user->createToken('authToken')->plainTextToken;
-
 
             return response()->json([
                 'message' => 'Login successful',
@@ -240,6 +243,34 @@ class AuthController extends Controller
             return true;
         }catch (\Exception $exception){
             return false;
+        }
+    }
+
+    private function requestOTPCode()
+    {
+        return rand(1000, 9999);
+    }
+    private function checkExistingUser(Request $request)
+    {
+        try{
+
+            $request->validate([
+                'email' => 'required|email',
+                'username' => 'required|string'
+            ]);
+
+            $user = UserProfileModel::where('email', $request->email)->first();
+            $username = UserModel::where('username', $request->username)->first();
+
+            if ($user || $username) {
+                return response()->json([
+                    'message' => 'User already exists',
+                    'is_available' => false
+                ], 200);
+            }
+
+        }catch (\Exception $exception){
+            return response()->json(['error' => $exception->getMessage(), 'message' => 'Oops! Something went wrong.'], 500);
         }
     }
 }
