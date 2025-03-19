@@ -144,9 +144,13 @@ class AuthController extends Controller
 
             if ($tokenInfo->getStatusCode() == 200) {
                 if($this->SaveToDatabase($tokenInfo, $accessToken, 'google')){
+
+                    $user = UserProfileModel::where('email', $tokenInfo->json('email'))->first();
+
                     return response()->json([
                         'message' => 'Login with Google successful',
                         'access_token' => $accessToken,
+                        'user_profile_id' => $user->user_profile_id,
                     ], 200);
                 }
                 else
