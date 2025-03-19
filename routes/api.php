@@ -5,6 +5,8 @@ use App\Http\Controllers\api\v1\CookingInstruction\CookingStepController;
 use App\Http\Controllers\api\v1\Ingredient\IngredientController;
 use App\Http\Controllers\api\v1\Recipes\RecipeCategoryController;
 use App\Http\Controllers\api\v1\Recipes\RecipesController;
+use App\Http\Controllers\api\v1\Search\SearchController;
+use App\Http\Controllers\api\v1\WishList\WishListController;
 use App\Http\Controllers\Auth\AuthController;
 use Illuminate\Support\Facades\Route;
 
@@ -27,12 +29,14 @@ Route::prefix('auth')->group(function () {
 });
 
 # API Version 1 Routes (Protected with auth:sanctum)
-Route::prefix('v1')->group(function () {
+Route::prefix('v1')->group(callback: function () {
     Route::resource('cookingInstructions', CookingInstructionController::class);
     Route::resource('cookingSteps', CookingStepController::class);
     Route::resource('recipeCategories', RecipeCategoryController::class);
     Route::resource('recipes', RecipesController::class);
     Route::resource('ingredients', IngredientController::class);
+    Route::resource('wishlists',WishlistController::class);
+    Route::get('search', [SearchController::class, 'index']);
 });
 
 //->middleware(['auth:sanctum'])->
