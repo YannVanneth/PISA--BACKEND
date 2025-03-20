@@ -259,7 +259,7 @@ class AuthController extends Controller
                    [
                        'first_name' => $firstName,
                        'last_name' => $lastName,
-                       'imageURL' => $picture,
+                       'image_url' => $picture,
                        'email' => $tokenInfo->json('email'),
                        'phone_number' => null,
                        'is_verified' => true,
@@ -283,7 +283,7 @@ class AuthController extends Controller
 
                $user = UserProfileModel::where([
                    'email' => $tokenInfo->json('email'),
-                   'imageURL' => $picture,
+                   'image_url' => $picture,
                ])->first();
 
                return response()->json([

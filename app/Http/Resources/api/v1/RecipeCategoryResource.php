@@ -17,7 +17,7 @@ class RecipeCategoryResource extends JsonResource
         return [
             'recipe_categories_km' => $this->recipe_categories_km,
             'recipe_categories_en' => $this->recipe_categories_en,
-            'imageURl'=> $this->imageURL,
+            'image_url'=> $this->imageURL,
         ];
     }
 }

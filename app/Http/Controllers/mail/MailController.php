@@ -72,19 +72,19 @@ class MailController extends Controller
 
             if (!$user) {
                 return response()->json([
-                    'isValid' => false,
+                    'is_valid' => false,
                     'message' => 'Invalid OTP or email.'
                 ], 400);
             }
 
             return response()->json([
-                'isValid' => true,
+                'is_valid' => true,
                 'user' => $user
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
-                'isValid' => false,
+                'is_valid' => false,
                 'message' => 'Something went wrong. Please try again.',
                 'error' => $e->getMessage()
             ], 500);

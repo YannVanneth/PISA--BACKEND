@@ -18,6 +18,7 @@ class UserProfileResource extends JsonResource
             'is_verified' => $this->is_verified,
             'otp_code' => $this->otp_code,
             'otp_code_expire_at' => $this->otp_code_expire_at,
+            'provider' => $this->provider,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

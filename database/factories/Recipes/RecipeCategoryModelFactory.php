@@ -14,7 +14,7 @@ class RecipeCategoryModelFactory extends Factory
         return [
             'recipe_categories_km' => $this->faker->name,
             'recipe_categories_en' => $this->faker->name,
-            'imageURl' => $this->faker->imageUrl(),
+            'image_url' => $this->faker->imageUrl(),
         ];
     }
 }
