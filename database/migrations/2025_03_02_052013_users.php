@@ -15,12 +15,13 @@ return new class extends Migration
             $table->id('user_profile_id');
             $table->string('first_name');
             $table->string('last_name');
-            $table->string('imageURL')->nullable();
+            $table->string('image_url')->nullable();
             $table->string('email');
             $table->string('phone_number')->nullable();
             $table->boolean('is_verified')->default(false);
             $table->string('otp_code')->nullable();
             $table->dateTime('otp_code_expire_at')->nullable();
+            $table->string('provider')->nullable();
             $table->timestamps();
         });
 

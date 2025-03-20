@@ -16,7 +16,7 @@ class RecipeCategoryModel extends Model
     protected $fillable = [
         'recipe_categories_km',
         'recipe_categories_en',
-        'imageURl',
+        'image_url',
     ];
 
     public function recipes()

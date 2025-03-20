@@ -20,7 +20,7 @@ return new class extends Migration
                 $table->string('ingredients_name_km');
                 $table->integer('ingredients_quantity');
                 $table->string('ingredients_unit');
-                $table->string('ingredients_imageURL');
+                $table->string('ingredients_image_url');
                 $table->timestamps();
             });
         }

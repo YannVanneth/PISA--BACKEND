@@ -15,7 +15,7 @@ class IngredientResource extends JsonResource
             'ingredients_name_km' => $this->ingredients_name_km,
             'ingredients_quantity' => $this->ingredients_quantity,
             'ingredients_unit' => $this->ingredients_unit,
-            'ingredients_imageURL' => $this->ingredients_imageURL,
+            'ingredients_image_url' => $this->ingredients_imageURL,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];
