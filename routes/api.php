@@ -49,6 +49,9 @@ Route::prefix('v1')->group(callback: function () {
 
 
     Route::get('search', [SearchController::class, 'index']);
+    Route::get('search/ingredients', [SearchController::class, 'searchByIngredients']);
+    Route::get('search/categoryies', [SearchController::class, 'searchByCategory']);
+    Route::get('search/recipes', [SearchController::class, 'searchByRecipes']);
 });
 
 //->middleware(['auth:sanctum'])->
