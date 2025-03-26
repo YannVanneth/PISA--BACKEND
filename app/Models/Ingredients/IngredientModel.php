@@ -19,7 +19,8 @@ class IngredientModel extends Model
         'ingredients_name_en',
         'ingredients_name_km',
         'ingredients_quantity',
-        'ingredients_unit',
+        'ingredients_unit_km',
+        'ingredients_unit_en',
         'ingredients_imageURL',
     ];
 

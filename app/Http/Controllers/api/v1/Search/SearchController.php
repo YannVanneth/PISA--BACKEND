@@ -20,10 +20,10 @@ class SearchController extends Controller
             'ingredients' => 'required|string',
         ]);
 
+        // Parse and clean the ingredients input
         $ingredients = array_map('trim', explode(',', $request->input('ingredients')));
         $ingredients = array_map('strtolower', $ingredients);
 
-        // Correctly pluck 'ingredients_id'
         $matchedIngredientIds = IngredientModel::where(function ($query) use ($ingredients) {
             foreach ($ingredients as $ingredient) {
                 $query->orWhereRaw('LOWER(ingredients_name_en) LIKE ?', ['%' . $ingredient . '%'])
@@ -37,12 +37,14 @@ class SearchController extends Controller
 
         $recipes = RecipeModel::with(['category', 'cookingInstructions', 'cookingSteps', 'ingredients'])
             ->whereHas('ingredients', function ($query) use ($matchedIngredientIds) {
+                // Use whereIn to match recipes with any of the matched ingredients
                 $query->whereIn('ingredients_id', $matchedIngredientIds);
             })
             ->get();
 
         return response()->json($recipes);
     }
+
 
     public function searchByCategory(Request $request): \Illuminate\Http\JsonResponse
     {
@@ -127,88 +129,52 @@ class SearchController extends Controller
             'ingredients' => 'required|string',
         ]);
 
-        // Split the ingredients string into an array, trim whitespace, and convert to lowercase
-        $ingredients = array_map('trim', explode(',', $request->input('ingredients')));
-        $ingredients = array_map('strtolower', $ingredients); // Convert to lowercase
+        // Get ingredients as an array and convert to lowercase
+        $ingredients = array_map('strtolower', explode(',', $request->input('ingredients')));
 
-        // Get all recipe IDs that have at least one of the ingredients or match the recipe name (case-insensitive search)
-        $recipeIds = IngredientModel::where(function ($query) use ($ingredients) {
-            foreach ($ingredients as $ingredient) {
-                $query->orWhereRaw('LOWER(ingredients_name_en) LIKE ?', ['%' . $ingredient . '%'])
+        // Initialize query builder for ingredients search
+        $ingredientQuery = IngredientModel::query();
+
+        // Efficiently search for ingredients across multiple languages (if applicable)
+        foreach ($ingredients as $ingredient) {
+            $ingredientQuery->orWhere(function ($query) use ($ingredient) {
+                // Allow partial matching for ingredient names
+                $query->whereRaw('LOWER(ingredients_name_en) LIKE ?', ['%' . $ingredient . '%'])
                     ->orWhereRaw('LOWER(ingredients_name_km) LIKE ?', ['%' . $ingredient . '%']);
-            }
-        })->pluck('recipes_id')->unique();
+            });
+        }
 
-        // Also search for recipes by name and apply character count validation
+        // Fetch recipe IDs based on ingredient search
+        $recipeIds = $ingredientQuery->pluck('recipes_id')->unique();
+
+        // Efficient search for recipes by name (with case-insensitive matching)
         $recipeIdsByName = RecipeModel::where(function ($query) use ($ingredients) {
             foreach ($ingredients as $ingredient) {
+                // Allow partial matching for recipe names (substring match)
                 $query->orWhereRaw('LOWER(recipes_title_en) LIKE ?', ['%' . $ingredient . '%'])
                     ->orWhereRaw('LOWER(recipes_title_km) LIKE ?', ['%' . $ingredient . '%']);
             }
         })->pluck('recipes_id')->unique();
 
-        // Filter recipes by name based on character count validation
-        $filteredRecipeIdsByName = $recipeIdsByName->filter(function ($recipeId) use ($ingredients) {
-            // Get the recipe by ID
-            $recipe = RecipeModel::find($recipeId);
-
-            if (!$recipe) {
-                return false;
-            }
-
-            $dbTitleEn = strtolower($recipe->recipes_title_en);
-            $dbTitleKm = strtolower($recipe->recipes_title_km);
-
-            // Check the user input against the recipe name
+        // Efficient search for categories (with case-insensitive matching)
+        $recipesIdsByCategory = RecipeCategoryModel::where(function ($query) use ($ingredients) {
             foreach ($ingredients as $ingredient) {
-                if (!$this->matchesCharacterLimit($ingredient, $dbTitleEn) && !$this->matchesCharacterLimit($ingredient, $dbTitleKm)) {
-                    return false;
-                }
-            }
-
-            return true; // Accept recipe if it matches the character limit
-        });
-
-        // Also search for recipes by category and apply character count validation
-        $recipesIdsBycategory = RecipeCategoryModel::where(function ($query) use ($ingredients) {
-            foreach ($ingredients as $ingredient) {
+                // Allow partial matching for categories
                 $query->orWhereRaw('LOWER(recipe_categories_en) LIKE ?', ['%' . $ingredient . '%'])
                     ->orWhereRaw('LOWER(recipe_categories_km) LIKE ?', ['%' . $ingredient . '%']);
             }
         })->pluck('recipe_categories_id')->unique();
 
-        // Get recipes by category, applying character limit validation
-        $recipeIdsByCategory = RecipeModel::whereIn('recipe_categories_id', $recipesIdsBycategory)->pluck('recipes_id')->unique();
-        $filteredRecipeIdsByCategory = $recipeIdsByCategory->filter(function ($recipeId) use ($ingredients) {
-            // Get the recipe by ID
-            $recipe = RecipeModel::find($recipeId);
+        // Find recipes by category
+        $recipeIdsByCategory = RecipeModel::whereIn('recipe_categories_id', $recipesIdsByCategory)
+            ->pluck('recipes_id')
+            ->unique();
 
-            if (!$recipe) {
-                return false;
-            }
-
-            $categoryEn = strtolower($recipe->category->recipe_categories_en ?? '');
-            $categoryKm = strtolower($recipe->category->recipe_categories_km ?? '');
-
-            // Check if the category matches the character count
-            foreach ($ingredients as $ingredient) {
-                if (!$this->matchesCharacterLimit($ingredient, $categoryEn) && !$this->matchesCharacterLimit($ingredient, $categoryKm)) {
-                    return false;
-                }
-            }
-
-            return true; // Accept category if it matches the character limit
-        });
-
-        // Combine all recipe IDs and remove duplicates
-        $allRecipeIds = $recipeIds->merge($filteredRecipeIdsByName)->merge($filteredRecipeIdsByCategory)->unique();
-
-        // If no matching recipes found
+        // Combine all results and remove duplicates
+        $allRecipeIds = $recipeIds->merge($recipeIdsByName)->merge($recipeIdsByCategory)->unique();
         if ($allRecipeIds->isEmpty()) {
             return response()->json(['message' => 'No recipes found for these ingredients or name.'], 404);
         }
-
-        // Get recipes with their related models
         $recipes = RecipeModel::with(['category', 'cookingInstructions', 'cookingSteps', 'ingredients'])
             ->whereIn('recipes_id', $allRecipeIds)
             ->get();
