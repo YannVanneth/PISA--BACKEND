@@ -6,10 +6,11 @@ use App\Models\Recipes\RecipeFavoriteModel;
 use App\Models\Recipes\RecipeRatingModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Notifications\Notifiable;
 
 class UserProfileModel extends Model
 {
-    use HasFactory;
+    use HasFactory, notifiable;
 
     protected $table = 'user_profile';
 

@@ -29,6 +29,7 @@ return new class extends Migration
             $table->id('users_id')->primary();
             $table->string('username');
             $table->string('password');
+            $table->string('email')->unique();
             $table->foreignId('profile_id')
                 ->constrained('user_profile', 'user_profile_id');
             $table->timestamps();
@@ -51,6 +52,11 @@ return new class extends Migration
             $table->foreignId('profile_id')
                 ->constrained('user_profile', 'user_profile_id');
             $table->string('comment_content');
+            $table->integer('parent_comment_id')->nullable();
+            $table->boolean('is_verified')->default(false);
+            $table->bigInteger('react_count')->default(0);
+            $table->boolean('is_liked')->default(false);
+            $table->longText('replies')->nullable();
             $table->timestamps();
         });
 

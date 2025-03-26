@@ -17,7 +17,12 @@ class UserCommentModel extends Model
     protected $fillable = [
         'recipe_id',
         'profile_id',
+        'react_count',
         'comment_content',
+        'parent_comment_id',
+        'is_verified',
+        'is_liked',
+        'replies',
     ];
 
     public function profile()
