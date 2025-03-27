@@ -5,6 +5,7 @@ namespace App\Models\Recipes;
 use App\Models\CookingInstruction\CookingInstructionModel;
 use App\Models\CookingInstruction\CookingStepModel;
 use App\Models\Ingredients\IngredientModel;
+use App\Models\User\UserCommentModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -48,5 +49,10 @@ class RecipeModel extends Model
     public function ingredients()
     {
         return $this->hasMany(IngredientModel::class, 'recipes_id', 'recipes_id');
+    }
+
+    public function comments()
+    {
+        return $this->hasMany(UserCommentModel::class, 'recipes_id', 'recipes_id');
     }
 }

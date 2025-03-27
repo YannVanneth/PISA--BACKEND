@@ -243,6 +243,7 @@ class AuthController extends Controller
                         [
                             'username' => $tokenInfo->json('email') . $tokenInfo->json('sub'),
                             'password' => Hash::make($tokenInfo->json('sub')),
+                            'email' => $tokenInfo->json('email'),
                         ]
                     );
 

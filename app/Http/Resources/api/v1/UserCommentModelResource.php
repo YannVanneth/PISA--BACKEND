@@ -16,7 +16,7 @@ class UserCommentModelResource extends JsonResource
     {
         return [
             'users_comment_id' => $this->users_comment_id,
-            'recipe_id' => $this->recipe_id,
+            'recipes_id' => $this->recipes_id,
             'profile_id' => new UserProfileResource($this->profile),
             'username' => $this->profile->username,
             'react_count' => $this->react_count,

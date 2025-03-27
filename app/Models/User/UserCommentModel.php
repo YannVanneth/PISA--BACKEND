@@ -15,7 +15,7 @@ class UserCommentModel extends Model
     protected $primaryKey = 'users_comment_id';
 
     protected $fillable = [
-        'recipe_id',
+        'recipes_id',
         'profile_id',
         'react_count',
         'comment_content',
@@ -25,13 +25,13 @@ class UserCommentModel extends Model
         'replies',
     ];
 
-    public function profile()
+    public function profile(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(UserProfileModel::class, 'profile_id', 'user_profile_id');
     }
 
-    public function recipe()
+    public function recipe(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(RecipeModel::class, 'recipe_id', 'recipes_id');
+        return $this->belongsTo(RecipeModel::class, 'recipes_id', 'recipes_id');
     }
 }

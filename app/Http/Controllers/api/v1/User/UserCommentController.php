@@ -61,11 +61,10 @@ class UserCommentController extends Controller
 
             $request->validate(
                 [
-                    'recipe_id' => 'required|exists:recipes,recipe_id',
-                    'profile_id' => 'required|exists:users,profile_id',
+                    'recipes_id' => 'required|exists:recipes,recipes_id',
+                    'profile_id' => 'required|exists:user_profile,user_profile_id',
                     'react_count' => 'required|integer',
                     'comment_content' => 'required|string|max:1000',
-                    'parent_comment_id' => 'nullable|exists:comments,id',
                     'is_verified' => 'nullable|boolean',
                     'is_liked' => 'nullable|boolean',
                     'replies' => 'nullable|string|max:2000',
@@ -75,7 +74,7 @@ class UserCommentController extends Controller
 
             return response()->json([
                 'message' => 'Comment posted successfully',
-                'data' => $userComment
+                'data' => new UsercommentModelResource($userComment)
             ]);
 
         }catch (\Exception $exception){

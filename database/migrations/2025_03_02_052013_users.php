@@ -47,7 +47,7 @@ return new class extends Migration
 
         Schema::create('users_comment', function (Blueprint $table) {
             $table->id('users_comment_id');
-            $table->foreignId('recipe_id')
+            $table->foreignId('recipes_id')
                 ->constrained('recipes', 'recipes_id');
             $table->foreignId('profile_id')
                 ->constrained('user_profile', 'user_profile_id');
