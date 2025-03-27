@@ -25,6 +25,7 @@ class RecipeModel extends Model
         'recipes_description_en',
         'recipes_image_url',
         'recipes_video_url',
+        'is_breakfast',
         'recipes_created_by',
         'recipes_view_counts',
         'recipes_duration',

@@ -20,13 +20,14 @@ class RecipesResource extends JsonResource
             'recipes_title_en' => $this->recipes_title_en,
             'recipes_description_km' => $this->recipes_description_km,
             'recipes_description_en' => $this->recipes_description_en,
-            'recipes_image_url' => $this->recipes_imageURL,
-            'recipes_video_url' => $this->recipes_videoURL,
+            'recipes_image_url' => $this->recipes_image_url,
+            'recipes_video_url' => $this->recipes_video_url,
             'recipes_created_by' => $this->recipes_created_by,
             'recipes_view_counts' => $this->recipes_view_counts,
             'recipes_duration' => $this->recipes_duration,
-            'recipe_categories_id' => $this->recipe_categories_id,
-            'ingredients' => IngredientResource::collection($this->whenLoaded('ingredients')),
+            'recipe_category' => new RecipeCategoryResource($this->category),
+            'is_breakfast' => $this->is_breakfast,
+            'ingredients' => IngredientResource::collection($this->ingredients),
         ];
     }
 }

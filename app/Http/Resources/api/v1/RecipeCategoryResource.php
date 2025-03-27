@@ -15,9 +15,10 @@ class RecipeCategoryResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'recipe_categories_id' => $this->recipe_categories_id,
             'recipe_categories_km' => $this->recipe_categories_km,
             'recipe_categories_en' => $this->recipe_categories_en,
-            'image_url'=> $this->imageURL,
+            'image_url'=> $this->image_url,
         ];
     }
 }
