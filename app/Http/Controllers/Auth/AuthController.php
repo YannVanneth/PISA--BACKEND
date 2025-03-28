@@ -215,7 +215,7 @@ class AuthController extends Controller
                         [
                             'first_name' => $tokenInfo->json('given_name'),
                             'last_name' => $tokenInfo->json('family_name'),
-                            'imageURL' => $tokenInfo->json('picture'),
+                            'image_url' => $tokenInfo->json('picture'),
                             'email' => $tokenInfo->json('email'),
                             'phone_number' => null,
                             'is_verified' => true,
@@ -293,7 +293,8 @@ class AuthController extends Controller
            if ($tokenInfo->getStatusCode() == 200) {
 
                try{
-                     DB::beginTransaction();
+
+                   DB::beginTransaction();
 
                $firstName = explode(' ', $tokenInfo->json('name'))[0];
                $lastName = explode(' ', $tokenInfo->json('name'))[1];
