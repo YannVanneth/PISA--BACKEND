@@ -28,6 +28,7 @@ class RecipesResource extends JsonResource
             'recipe_category' => new RecipeCategoryResource($this->category),
             'is_breakfast' => $this->is_breakfast,
             'ingredients' => IngredientResource::collection($this->ingredients),
+            'cooking_steps' => CookingStepsResource::collection($this->cookingSteps),
         ];
     }
 }

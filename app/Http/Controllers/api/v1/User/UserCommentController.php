@@ -12,10 +12,13 @@ class UserCommentController extends Controller
 {
     public function index(Request $request)
     {
-        if($request->query('recipe_id')){
+        if($request->query('recipes_id')){
+
+            $recipes = UserCommentModel::where('recipes_id', $request->query('recipes_id'))->get();
+
             return \response()->json([
                 'message' => 'Comments for recipe',
-                'data' => UserCommentModel::where('recipe_id', $request->query('recipe_id'))->get()
+                'data' => UserCommentModelResource::collection($recipes)
             ]);
         }
 
