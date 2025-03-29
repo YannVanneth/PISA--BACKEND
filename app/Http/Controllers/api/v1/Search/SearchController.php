@@ -35,15 +35,17 @@ class SearchController extends Controller
             return response()->json([], 200);
         }
 
+        // Fetch recipes and ensure uniqueness
         $recipes = RecipeModel::with(['category', 'cookingInstructions', 'cookingSteps', 'ingredients'])
             ->whereHas('ingredients', function ($query) use ($matchedIngredientIds) {
-                // Use whereIn to match recipes with any of the matched ingredients
                 $query->whereIn('ingredients_id', $matchedIngredientIds);
             })
-            ->get();
+            ->get()
+            ->unique('recipes_id');
 
-        return response()->json($recipes);
+        return response()->json($recipes->values());
     }
+
 
 
     public function searchByCategory(Request $request): \Illuminate\Http\JsonResponse
@@ -53,13 +55,11 @@ class SearchController extends Controller
             'category' => 'required|string',
         ]);
 
-        // Retrieve the category from the request
+        // Retrieve and process category input
         $category = strtolower(trim($request->input('category')));
-
-        // Split the category into individual words
         $words = explode(' ', $category);
 
-        // Find category IDs using LIKE for better matching (case-insensitive, trimming spaces)
+        // Find category IDs using LIKE for better matching
         $categoryIds = RecipeCategoryModel::where(function ($query) use ($words) {
             foreach ($words as $word) {
                 $query->orWhereRaw('LOWER(TRIM(recipe_categories_en)) LIKE ?', ['%' . $word . '%'])
@@ -69,16 +69,16 @@ class SearchController extends Controller
 
         // Check if category IDs were found
         if ($categoryIds->isEmpty()) {
-            return response()->json(['message', 'product not found!'], 401);
+            return response()->json(['message' => 'Product not found!'], 401);
         }
 
-        // Get recipes with the matching category IDs
+        // Get recipes and ensure no duplicates
         $recipes = RecipeModel::with(['category', 'cookingInstructions', 'cookingSteps', 'ingredients'])
             ->whereIn('recipe_categories_id', $categoryIds)
-            ->get();
+            ->get()
+            ->unique('recipes_id'); // Ensure uniqueness by recipe ID
 
-        // Return the recipes in the response
-        return response()->json($recipes);
+        return response()->json($recipes->values()); // Reset array indexes before returning
     }
 
 

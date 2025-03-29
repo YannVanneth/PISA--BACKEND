@@ -4,6 +4,7 @@ use App\Http\Controllers\api\v1\CookingInstruction\CookingInstructionController;
 use App\Http\Controllers\api\v1\CookingInstruction\CookingStepController;
 use App\Http\Controllers\api\v1\Ingredient\IngredientController;
 use App\Http\Controllers\api\v1\Recipes\RecipeCategoryController;
+use App\Http\Controllers\api\v1\Recipes\RecipeFavoriteController;
 use App\Http\Controllers\api\v1\Recipes\RecipesController;
 use App\Http\Controllers\api\v1\Search\SearchController;
 use App\Http\Controllers\api\v1\User\UserProfileController;
@@ -46,8 +47,10 @@ Route::prefix('v1')->group(callback: function () {
     Route::resource('ingredients', IngredientController::class);
     Route::resource('wishlists',WishlistController::class);
     Route::resource('userProfile', UserProfileController::class);
-
-
+    //favorite -----------------------------------------------------------------------------
+    Route::resource('favorite',RecipeFavoriteController::class);
+    Route::delete('favorite/remove', [RecipeFavoriteController::class, 'destroy']);
+    //search --------------------------------------------------------------------------------
     Route::get('search', [SearchController::class, 'index']);
     Route::get('search/ingredients', [SearchController::class, 'searchByIngredients']);
     Route::get('search/categoryies', [SearchController::class, 'searchByCategory']);
