@@ -5,7 +5,10 @@ namespace App\Http\Controllers\api\v1\User;
 use App\Http\Controllers\Controller;
 use App\Models\User\UserModel;
 use App\Models\User\UserProfileModel;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class UserProfileController extends Controller
 {
@@ -26,17 +29,70 @@ class UserProfileController extends Controller
 
     public function update(Request $request, $id)
     {
-        $userProfile = UserProfileModel::findOrFail($id);
-        $userProfile->update($request->all());
-        return $userProfile;
+        try {
+            $request->validate([
+                'first_name' => 'sometimes|string|max:60',
+                'last_name' => 'sometimes|string|max:60',
+                'password' => 'sometimes|string|min:8'
+            ]);
+
+            if(!$request->hasAny(['first_name', 'last_name', 'password'])){
+                return response()->json(['message' => 'No fields to update'], 400);
+            }
+
+            DB::beginTransaction();
+            $userProfile = UserProfileModel::find($id);
+
+            if (!$userProfile) {
+                return response()->json(['message' => 'User not found'], 404);
+            }
+
+            if ($request->filled('first_name')) {
+                $userProfile->first_name = $request->input('first_name');
+            }
+
+            if ($request->filled('last_name')) {
+                $userProfile->last_name = $request->input('last_name');
+            }
+
+            if ($request->filled('password')) {
+                $user = UserModel::where('profile_id', $id)->first();
+                if ($user) {
+                    $user->password = Hash::make($request->password);
+                    $user->update([
+                        'password' => $user->password,
+                    ]);
+                }
+            }
+
+            $userProfile->update([
+                'first_name' => $userProfile->first_name,
+                'last_name' => $userProfile->last_name,
+            ]);
+
+            $userProfile->load('user');
+
+            DB::commit();
+            return response()->json([
+                'message' => 'User updated successfully',
+                'user' => $userProfile,
+            ]);
+
+        } catch (\Exception $exception) {
+            DB::rollBack();
+            return response()->json([
+                'error' => $exception->getMessage(),
+                'message' => 'Oops! Something went wrong!'
+            ], 500);
+        }
     }
+
 
     public function destroy($id)
     {
         UserProfileModel::destroy($id);
         return response()->noContent();
     }
-
     public function checkExistingUser(Request $request)
     {
         try{

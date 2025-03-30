@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('last_name');
             $table->string('image_url')->nullable();
             $table->string('email');
+            $table->string('password');
             $table->string('phone_number')->nullable();
             $table->boolean('is_verified')->default(false);
             $table->string('otp_code')->nullable();
@@ -25,15 +26,15 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('users', function (Blueprint $table) {
-            $table->id('users_id')->primary();
-            $table->string('username');
-            $table->string('password');
-            $table->string('email')->unique();
-            $table->foreignId('profile_id')
-                ->constrained('user_profile', 'user_profile_id');
-            $table->timestamps();
-        });
+//        Schema::create('users', function (Blueprint $table) {
+//            $table->id('users_id')->primary();
+//            $table->string('username');
+//            $table->string('password');
+//            $table->string('email')->unique();
+//            $table->foreignId('profile_id')
+//                ->constrained('user_profile', 'user_profile_id');
+//            $table->timestamps();
+//        });
 
         Schema::create('social_login', function (Blueprint $table){
             $table->id('social_login_id');

@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('user_reacted_comments', function (Blueprint $table) {
             $table->id('user_reacted_comments');
-            $table->foreignId('user_id')->constrained('users', 'users_id');
+            $table->foreignId('user_profile_id')->constrained('user_profile', 'user_profile_id');
             $table->foreignId('comment_id')->constrained('users_comment', 'users_comment_id');
             $table->boolean('reaction');
             $table->timestamps();

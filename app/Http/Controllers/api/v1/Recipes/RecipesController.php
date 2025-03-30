@@ -21,7 +21,7 @@ class RecipesController extends Controller
      */
     public function index()
     {
-        $data = RecipeModel::all();;
+        $data = RecipeModel::paginate(10);;
 
         if($data->isEmpty()){
             return response()->json([
