@@ -22,7 +22,11 @@ Route::prefix('v1')->group(callback: function () {
     Route::resource('recipes', RecipesController::class);
     Route::resource('ingredients', IngredientController::class);
     Route::resource('wishlists',WishlistController::class);
-    Route::resource('userProfile', UserProfileController::class);
+
+
+
+
+//    Route::resource('userProfile', UserProfileController::class);
 
 
 
@@ -30,6 +34,9 @@ Route::prefix('v1')->group(callback: function () {
     Route::prefix('user-profile')->group(function (){
         Route::get('userProfile', [UserProfileController::class, 'checkExistingUser']);
         Route::get('index', [UserProfileController::class, 'index']);
+        Route::get('show/{id}', [UserProfileController::class, 'show']);
+        Route::post('update/{id}', [UserProfileController::class, 'update']);
+
     });
 
 

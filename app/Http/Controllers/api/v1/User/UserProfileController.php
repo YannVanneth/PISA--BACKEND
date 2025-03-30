@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class UserProfileController extends Controller
 {
@@ -33,6 +34,7 @@ class UserProfileController extends Controller
             $request->validate([
                 'first_name' => 'sometimes|string|max:60',
                 'last_name' => 'sometimes|string|max:60',
+                'image_url' => 'sometimes|file|mimes:jpeg,png,jpg,gif,svg|max:2048',
                 'password' => 'sometimes|string|min:8'
             ]);
 
@@ -56,21 +58,33 @@ class UserProfileController extends Controller
             }
 
             if ($request->filled('password')) {
-                $user = UserModel::where('profile_id', $id)->first();
-                if ($user) {
-                    $user->password = Hash::make($request->password);
-                    $user->update([
-                        'password' => $user->password,
-                    ]);
-                }
+                $userProfile->password = Hash::make($request->input('password'));
             }
+
+            if ($request->hasFile('image_url')) {
+
+                $image = $request->file('user_profile_image');
+                $imageName = time() . '.' . $image->getClientOriginalExtension();
+                $image->move(public_path('images'), $imageName);
+                $imageURL = url('images/' . $imageName);
+
+                $oldImage = $userProfile->image_url;
+                if ($oldImage) {
+                    $oldImagePath = public_path(parse_url($oldImage, PHP_URL_PATH));
+                    if (file_exists($oldImagePath)) {
+                        unlink($oldImagePath);
+                    }
+                }
+
+                $userProfile->image_url = $imageURL;
+            }
+
 
             $userProfile->update([
                 'first_name' => $userProfile->first_name,
                 'last_name' => $userProfile->last_name,
+                'image_url' => $userProfile->image_url,
             ]);
-
-            $userProfile->load('user');
 
             DB::commit();
             return response()->json([
