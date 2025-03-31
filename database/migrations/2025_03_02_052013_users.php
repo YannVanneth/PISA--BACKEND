@@ -70,14 +70,14 @@ return new class extends Migration
             $table->double('rating_value');
         });
 
-        Schema::create('recipes_favorite', function (Blueprint $table) {
-            $table->id('recipes_favorite');
-            $table->foreignId('recipes_id')
-                ->constrained('recipes', 'recipes_id');
-            $table->foreignId('profile_id')
-                ->constrained('user_profile', 'user_profile_id');
-            $table->timestamps();
-        });
+//        Schema::create('recipes_favorite', function (Blueprint $table) {
+//            $table->id('recipes_favorite');
+//            $table->foreignId('recipes_id')
+//                ->constrained('recipes', 'recipes_id');
+//            $table->foreignId('profile_id')
+//                ->constrained('user_profile', 'user_profile_id');
+//            $table->timestamps();
+//        });
     }
 
     /**
@@ -88,7 +88,7 @@ return new class extends Migration
         Schema::dropIfExists('users');
         Schema::dropIfExists('users_comment');
         Schema::dropIfExists('recipes_rating');
-        Schema::dropIfExists('recipes_favorite');
+//        Schema::dropIfExists('recipes_favorite');
         Schema::dropIfExists('social_login');
         Schema::dropIfExists('user_profile');
     }
