@@ -57,4 +57,5 @@ class RecipeModel extends Model
     {
         return $this->hasMany(UserCommentModel::class, 'recipes_id', 'recipes_id');
     }
+
 }
