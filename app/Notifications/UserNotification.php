@@ -2,64 +2,97 @@
 
 namespace App\Notifications;
 
+use App\Models\NotificationModel;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
-use Illuminate\Notifications\Messages\DatabaseMessage;
 
 class UserNotification extends Notification
 {
     use Queueable;
 
-    private $message;
-    private $eventType;
+    /**
+     * Create a new notification instance.
+     */
 
-    public function __construct($eventType, $message = null)
+    public string $title;
+    public string $message;
+    public string $type;
+    public int $userId;
+    public bool $unread = true;
+
+    public function __construct(string $title, string $message, string $type, int $userId)
     {
-        $this->eventType = $eventType;
+        $this->title = $title;
         $this->message = $message;
+        $this->type = $type;
+        $this->userId = $userId;
     }
 
-    public function via($notifiable)
+    /**
+     * Get the notification's delivery channels.
+     *
+     * @return array<int, string>
+     */
+    public function via(object $notifiable): array
     {
-        return ['verifyOTPMail', 'database'];
+        return ['broadcast'];
     }
 
-    public function toMail($notifiable)
+    /**
+     * Get the array representation of the notification.
+     *
+     * @return array<string, mixed>
+     */
+    public function toArray(object $notifiable): array
     {
-        $message = $this->getMessage();
-
-        return (new MailMessage)
-                    ->line($message)
-                    ->action('Notification Action', url('/'))
-                    ->line('Thank you for using our application!');
+        return [
+            'title' => $this->title,
+            'description' => $this->message,
+            'type' => $this->type,
+            'date' => now()->format('Y-m-d'),
+            'time' => now()->format('H:i:s'),
+            'un_read' => $this->unread,
+        ];
     }
 
-    public function toDatabase($notifiable)
+    public function toBroadcast(object $notifiable): BroadcastMessage
     {
-        return new DatabaseMessage([
-            'message' => $this->getMessage(),
-        ]);
+        NotificationModel::create(
+            [
+                'title' => $this->title,
+                'message' => $this->message,
+                'type' => $this->type,
+                'is_global' => 0,
+                'expires_at' => now()->addDays(7),
+            ]
+        );
+
+       return new BroadcastMessage(
+              [
+                'title' => $this->title,
+                'message' => $this->message . $notifiable->name,
+                'type' => $this->type,
+                'date' => now()->format('Y-m-d'),
+                'time' => now()->format('H:i:s'),
+                'un_read' => $this->unread,
+              ]
+       );
     }
 
-    private function getMessage()
+    public function broadcastOn(): PrivateChannel
     {
-        switch ($this->eventType) {
-            case 'login':
-                return $this->message ?? 'You have successfully logged in.';
-            case 'register':
-                return $this->message ?? 'You have successfully registered.';
-            case 'password_reset':
-                return $this->message ?? 'Your password has been reset.';
-            case 'change_password':
-                return $this->message ?? 'Your password has been changed.';
-            case 'reply-comment':
-                return $this->message ?? 'You have a new reply to your comment.';
-            case 'reaction-comment':
-                return $this->message ?? 'Someone reacted to your comment.';
-            default:
-                return $this->message ?? 'You have a new notification.';
-        }
+        return new PrivateChannel('user.' . auth()->id());
+    }
+
+    public function broadcastType(): string
+    {
+        return 'private.user';
+    }
+
+    public function broadcastAs(): string
+    {
+        return 'user-notification';
     }
 }

@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->id('recipe_categories_id');
             $table->string('recipe_categories_km');
             $table->string('recipe_categories_en');
-            $table->string('imageURl');
+            $table->string('image_url')->nullable();
             $table->timestamps();
         });
 
@@ -24,11 +24,12 @@ return new class extends Migration {
             $table->string('recipes_title_en');
             $table->text('recipes_description_km');
             $table->text('recipes_description_en');
-            $table->string('recipes_imageURL');
-            $table->string('recipes_videoURL');
+            $table->string('recipes_image_url')->nullable();
+            $table->string('recipes_video_url')->nullable();
+            $table->boolean('is_breakfast')->default(false);
             $table->string('recipes_created_by')->nullable();
-            $table->bigInteger('recipes_view_counts');
-            $table->time('recipes_duration')->nullable();
+            $table->bigInteger('recipes_view_counts')->default(0);
+            $table->string('recipes_duration')->default(0);
             $table->foreignId('recipe_categories_id')
                 ->constrained('recipe_categories', 'recipe_categories_id');
             $table->integer('is_breakfast');

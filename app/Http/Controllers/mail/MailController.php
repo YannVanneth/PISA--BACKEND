@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers\mail;
 
+use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Controller;
 use App\Mail\VerifyOTPMail;
 use App\Models\User\UserProfileModel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail as MailFacade;
 
 class MailController extends Controller
@@ -41,13 +44,21 @@ class MailController extends Controller
     public function RegisterMail(Request $request)
     {
         try {
-            $request->validate([
-                'email' => 'required|email'
-            ]);
 
-            $receiver = $request->input('email');
+            $receiver = $request->query('email');
+            $isResend = $request->query('isResend');
 
             $user = UserProfileModel::where('email', $receiver)->first();
+
+            if($isResend == 'true'){
+
+                $auth = new AuthController();
+
+                $user->update([
+                    'otp_code' => $auth->requestOTPCode(),
+                    'otp_code_expire_at' => now()->addMinutes(10)
+                ]);
+            }
 
             MailFacade::to($receiver)->send(new VerifyOTPMail(
                 "Thank you for registering with " . config('app.name') . ". To complete your account verification, please use the One-Time Password (OTP) provided below:",
@@ -65,31 +76,27 @@ class MailController extends Controller
 
     public function verifyOTP(Request $request){
         try {
-            $request->validate([
-                'email' => 'required|email',
-                'otp_code' => 'required',
-            ]);
 
             $user = UserProfileModel::where([
-                'email' => $request->email,
-                'otp_code' => $request->otp_code
+                'email' => $request->query('email'),
+                'otp_code' => $request->query('otp_code')
             ])->first();
 
             if (!$user) {
                 return response()->json([
-                    'isValid' => false,
+                    'is_valid' => false,
                     'message' => 'Invalid OTP or email.'
                 ], 400);
             }
 
             return response()->json([
-                'isValid' => true,
+                'is_valid' => true,
                 'user' => $user
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
-                'isValid' => false,
+                'is_valid' => false,
                 'message' => 'Something went wrong. Please try again.',
                 'error' => $e->getMessage()
             ], 500);

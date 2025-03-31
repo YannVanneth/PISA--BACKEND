@@ -41,10 +41,6 @@ class RecipesController extends Controller
                 'total' => $data->total(),
             ]
         ]);
-
-//        return response()->json(
-//           $data
-//        );
     }
 
     /**

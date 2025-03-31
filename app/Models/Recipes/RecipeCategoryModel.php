@@ -16,11 +16,13 @@ class RecipeCategoryModel extends Model
     protected $fillable = [
         'recipe_categories_km',
         'recipe_categories_en',
-        'imageURl',
+        'image_url',
     ];
 
     public function recipes()
     {
         return $this->hasMany(RecipeModel::class, 'recipe_categories_id', 'recipe_categories_id');
     }
+
+
 }
