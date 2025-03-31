@@ -28,12 +28,28 @@ class RecipesController extends Controller
         if($data->isEmpty()){
             return response()->json([
                 'message' => 'No recipes found',
-                'data' => RecipesResource::collection($data)
+                'data' => RecipeModel::collection($data)
             ], 404);
         }
 
-        $data = RecipesResource::collection($data);
-        return RecipesResource::collection($data)->additional([
+//        $data = RecipeModel::collection($data);
+//        return RecipeModel::collection($data)->additional([
+//            'meta' => [
+//                'current_page' => $data->currentPage(),
+//                'last_page' => $data->lastPage(),
+//                'per_page' => $data->perPage(),
+//                'total' => $data->total(),
+//            ]
+//        ]);
+        if($data->isEmpty()) {
+            return response()->json([
+                'message' => 'No recipes found',
+                'data' => []
+            ], 404);
+        }
+
+        return response()->json([
+            'data' => $data->items(),
             'meta' => [
                 'current_page' => $data->currentPage(),
                 'last_page' => $data->lastPage(),
