@@ -19,9 +19,11 @@ class RecipesController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $data = RecipeModel::paginate(10);;
+        $page = (int)$request->get('page', 1);
+        $perPage = (int)$request->get('per_page', 10);
+        $data = RecipeModel::paginate($perPage,['*'], 'page', $page);
 
         if($data->isEmpty()){
             return response()->json([
@@ -31,10 +33,14 @@ class RecipesController extends Controller
         }
 
         $data = RecipesResource::collection($data);
-
-        return response()->json(
-           $data
-        );
+        return RecipesResource::collection($data)->additional([
+            'meta' => [
+                'current_page' => $data->currentPage(),
+                'last_page' => $data->lastPage(),
+                'per_page' => $data->perPage(),
+                'total' => $data->total(),
+            ]
+        ]);
     }
 
     /**

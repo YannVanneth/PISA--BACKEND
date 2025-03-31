@@ -30,6 +30,7 @@ class RecipeModel extends Model
         'recipes_view_counts',
         'recipes_duration',
         'recipe_categories_id',
+        'is_breakfast',
     ];
 
     public function category()

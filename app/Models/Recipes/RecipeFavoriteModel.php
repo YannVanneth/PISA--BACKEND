@@ -17,6 +17,7 @@ class RecipeFavoriteModel extends Model
     protected $fillable = [
         'recipes_id',
         'profile_id',
+        'favorite_status',
     ];
 
     public function profile()
