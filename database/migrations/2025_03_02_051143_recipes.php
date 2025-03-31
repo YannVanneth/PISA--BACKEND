@@ -27,6 +27,7 @@ return new class extends Migration
             $table->text('recipes_description_en');
             $table->string('recipes_image_url')->nullable();
             $table->string('recipes_video_url')->nullable();
+            $table->boolean('is_breakfast')->default(false);
             $table->string('recipes_created_by')->nullable();
             $table->bigInteger('recipes_view_counts')->default(0);
             $table->string('recipes_duration')->default(0);

@@ -18,8 +18,9 @@ return new class extends Migration
                     ->constrained('recipes', 'recipes_id');
                 $table->string('ingredients_name_en');
                 $table->string('ingredients_name_km');
-                $table->integer('ingredients_quantity');
-                $table->string('ingredients_unit');
+                $table->string('ingredients_quantity');
+                $table->string('ingredients_unit_en');
+                $table->string('ingredients_unit_km');
                 $table->string('ingredients_image_url');
                 $table->timestamps();
             });

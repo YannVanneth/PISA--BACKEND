@@ -12,7 +12,7 @@ class UserProfileResource extends JsonResource
             'user_profile_id' => $this->user_profile_id,
             'first_name' => $this->first_name,
             'last_name' => $this->last_name,
-            'imageURL' => $this->imageURL,
+            'image_url' => $this->image_url,
             'email' => $this->email,
             'phone_number' => $this->phone_number,
             'is_verified' => $this->is_verified,

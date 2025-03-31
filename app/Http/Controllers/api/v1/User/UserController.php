@@ -35,4 +35,35 @@ class UserController extends Controller
         UserModel::destroy($id);
         return response()->noContent();
     }
+
+    public function commentReply(Request $request)
+    {
+        try{
+
+            $request->validate([
+                'profile_id' => 'required|exists:users,profile_id',
+                'reply_content' => 'required|string|max:1000',
+                'parent_comment_id' => 'required|exists:comments,id',
+            ]);
+
+            $user = UserModel::where('profile_id', $request->profile_id)->firstOrFail();
+
+            $user->notify(new CommentReply(
+                $request->profile_id,
+                $request->reply_content,
+                $request->parent_comment_id
+            ));
+
+            return response()->json([
+                'message' => 'Reply notification sent successfully',
+            ], 200);
+
+        }catch (\Exception $exception){
+            return response()->json([
+                'error' => $exception->getMessage(),
+                'message' => 'Ops! Something went wrong!',
+            ], 500);
+        }
+
+    }
 }

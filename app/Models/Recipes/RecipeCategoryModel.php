@@ -23,4 +23,6 @@ class RecipeCategoryModel extends Model
     {
         return $this->hasMany(RecipeModel::class, 'recipe_categories_id', 'recipe_categories_id');
     }
+
+
 }

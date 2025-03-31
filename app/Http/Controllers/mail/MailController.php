@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Mail\VerifyOTPMail;
 use App\Models\User\UserProfileModel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail as MailFacade;
 
@@ -45,8 +46,19 @@ class MailController extends Controller
         try {
 
             $receiver = $request->query('email');
+            $isResend = $request->query('isResend');
 
             $user = UserProfileModel::where('email', $receiver)->first();
+
+            if($isResend == 'true'){
+
+                $auth = new AuthController();
+
+                $user->update([
+                    'otp_code' => $auth->requestOTPCode(),
+                    'otp_code_expire_at' => now()->addMinutes(10)
+                ]);
+            }
 
             MailFacade::to($receiver)->send(new VerifyOTPMail(
                 "Thank you for registering with " . config('app.name') . ". To complete your account verification, please use the One-Time Password (OTP) provided below:",

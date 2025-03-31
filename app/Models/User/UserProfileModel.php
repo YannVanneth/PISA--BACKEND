@@ -5,11 +5,13 @@ namespace App\Models\User;
 use App\Models\Recipes\RecipeFavoriteModel;
 use App\Models\Recipes\RecipeRatingModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class UserProfileModel extends Model
+class UserProfileModel extends Authenticatable
 {
-    use HasFactory;
+    use HasFactory, notifiable, hasApiTokens;
 
     protected $table = 'user_profile';
 
@@ -20,6 +22,7 @@ class UserProfileModel extends Model
             'last_name',
             'image_url',
             'email',
+            'password',
             'provider',
             'phone_number',
             'is_verified',
@@ -27,10 +30,10 @@ class UserProfileModel extends Model
             'otp_code_expire_at',
     ];
 
-    public function user()
-    {
-    return $this->hasOne(UserModel::class, 'profile_id', 'user_profile_id');
-    }
+    protected $hidden = [
+        'password',
+    ];
+
 
     public function socialLogins()
     {

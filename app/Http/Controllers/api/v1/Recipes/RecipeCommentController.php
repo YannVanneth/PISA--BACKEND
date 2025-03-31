@@ -8,6 +8,8 @@ use App\Models\Recipes\RecipeCommentModel;
 use App\Models\Recipes\RecipeModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Notifications\UserNotification;
+use App\Events\CommentReplyNotification;
 
 class RecipeCommentController extends Controller
 {
@@ -37,16 +39,35 @@ class RecipeCommentController extends Controller
 
         $request->validate([
             'comment_text' => 'required|string|max:1000',
+            'parent_comment_id' => 'nullable|exists:recipe_comments,recipe_comments_id',
         ]);
 
         $comment = RecipeCommentModel::create([
             'recipes_id' => $recipeId,
             'profile_id' => Auth::user()->profile->user_profile_id,
             'comment_text' => $request->comment_text,
+            'parent_comment_id' => $request->parent_comment_id,
         ]);
 
         // Load the profile relationship
         $comment->load('profile');
+
+        // If this is a reply to another comment, send notification
+        if ($request->parent_comment_id) {
+            $parentComment = RecipeCommentModel::with('profile')->find($request->parent_comment_id);
+            
+            // Send notification to the user who wrote the parent comment
+            if ($parentComment && $parentComment->profile_id !== Auth::user()->profile->user_profile_id) {
+                $parentComment->profile->notify(new UserNotification(
+                    'New Reply to Your Comment',
+                    Auth::user()->profile->first_name . ' replied to your comment on ' . $recipe->title,
+                    'comment_reply'
+                ));
+
+                // Broadcast the reply notification
+                broadcast(new CommentReplyNotification($comment, $parentComment->profile))->dispatch();
+            }
+        }
 
         // Broadcast the new comment event
         broadcast(new NewRecipeComment($comment))->dispatch();

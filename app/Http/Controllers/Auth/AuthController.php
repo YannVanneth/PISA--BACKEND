@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User\SocialLoginModel;
 use App\Models\User\UserModel;
 use App\Models\User\UserProfileModel;
+use App\Notifications\UserNotification;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -40,7 +41,7 @@ class AuthController extends Controller
                     ->delete();
             });
 
-            return response()->json(['message' => 'Registration canceled.', 'isCanceled' => true], );
+            return response()->json(['message' => 'Registration canceled.', 'isCanceled' => true]);
         }catch (\Exception $exception){
             return response()->json(['error' => $exception->getMessage()], 500);
         }
@@ -50,11 +51,11 @@ class AuthController extends Controller
     {
         try {
         $request->validate([
-            'username' => 'required|string',
             'email' => 'required|email',
             'password' => 'required|string|min:8',
             'first_name' => 'required|string',
             'last_name' => 'required|string',
+            'user_profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
         // check existing user
@@ -62,6 +63,15 @@ class AuthController extends Controller
             return response()->json(['message' => 'User already exists', 'is_available' => false], 200);
         };
 
+        DB::beginTransaction();
+
+        $imageURL = null;
+        if($request->hasFile('user_profile_image')) {
+            $image = $request->file('user_profile_image');
+            $imageName = time() . '.' . $image->getClientOriginalExtension();
+            $image->move(public_path('images'), $imageName);
+            $imageURL = url('images/' . $imageName);
+        }
         // Create user profile
         $userProfile = UserProfileModel::updateOrCreate(
             [
@@ -70,60 +80,62 @@ class AuthController extends Controller
             ,[
                 'first_name' => $request->first_name,
                 'last_name' => $request->last_name,
+                'image_url' => $imageURL,
                 'email' => $request->email,
                 'is_verified' => false,
+                'password' => Hash::make($request->password),
+                'otp_code' => $this->requestOTPCode(),
+                'otp_code_expire_at' => now()->addMinutes(10),
         ]);
 
-        // Create user
-        $user = UserModel::updateOrCreate([
-            'username' => $request->username,
-        ],[
-            'username' => $request->username,
-            'password' => Hash::make($request->password),
-            'profile_id' => $userProfile->user_profile_id,
-        ]);
+        $token = $userProfile->createToken('auth_token')->plainTextToken;
 
-        // Generate OTP (for email verification)
-        $otp = $this->requestOTPCode();
-        $userProfile->update([
-            'otp_code' => $otp,
-            'otp_code_expire_at' => now()->addMinutes(10),
-        ]);
-
-        $token = $user->createToken('auth_token')->plainTextToken;
+        DB::commit();
 
         return response()->json([
             'message' => 'User registered successfully. Please verify your email.',
-            'user' => $user,
             'token' => $token,
+            'user_profile' => $userProfile,
             'is_available' => true,
             'token_type' => 'bearer',
         ], 200);
         }catch (\Exception $exception){
+            DB::rollBack();
             return response()->json(['error' => $exception->getMessage()], 500);
         }
     }
 
     // Login a user
-    public function login(Request $request)
+    public function login(Request $request): \Illuminate\Http\JsonResponse
     {
-        $request->validate([
-            'username' => 'required|string',
-            'password' => 'required|string',
-        ]);
-
-        if (Auth::attempt(['username' => $request->username, 'password' => $request->password])) {
-            $user = Auth::user();
-            $token = $user->createToken('authToken')->plainTextToken;
-
-            return response()->json([
-                'message' => 'Login successful',
-                'token' => $token,
-                'user_profile_id' => $user->profile_id,
+        try {
+            $request->validate([
+                'email' => 'required|email',
+                'password' => 'required|string',
             ]);
-        }
 
-        return response()->json(['message' => 'Invalid credentials'], 401);
+            if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
+                $user = Auth::user();
+                $token = $user->createToken('auth_token')->plainTextToken;
+
+                $user->notify(new UserNotification(
+                    'Welcome Back!',
+                    'You have successfully logged in to your account.',
+                    'login',
+                    $user->user_profile_id
+                ));
+
+                return response()->json([
+                    'message' => 'Login successful',
+                    'token' => $token,
+                    'user_profile_id' => $user->user_profile_id,
+                ]);
+            }
+
+            return response()->json(['message' => 'Invalid credentials'], 401);
+        } catch (\Exception $exception) {
+            return response()->json(['error' => $exception->getMessage()], 500);
+        }
     }
 
     // Forgot password
@@ -182,45 +194,61 @@ class AuthController extends Controller
 
             if ($tokenInfo->getStatusCode() == 200) {
 
-                $userProfile = UserProfileModel::updateOrCreate(
-                    [
-                        'email' => $tokenInfo->json('email'),
-                        'provider' => 'google',
-                    ],
-                    [
-                        'first_name' => $tokenInfo->json('given_name'),
-                        'last_name' => $tokenInfo->json('family_name'),
-                        'imageURL' => $tokenInfo->json('picture'),
-                        'email' => $tokenInfo->json('email'),
-                        'phone_number' => null,
-                        'is_verified' => true,
-                        'otp_code' => null,
-                        'otp_code_expire_at' => null,
-                    ]
-                );
+                try {
 
-                SocialLoginModel::updateOrCreate(
-                    [
-                        'social_login_provider_id' => $tokenInfo->json('sub'),
-                        'social_login_provider' => 'google',
-                    ],
-                    [
-                        'profile_id' => $userProfile->user_profile_id,
-                        'social_login_provider_id' => $tokenInfo->json('sub'),
-                        'access_token' => $accessToken,
-                    ]
-                );
+                    DB::beginTransaction();
 
-                $user = UserProfileModel::where([
-                    'email' => $tokenInfo->json('email'),
-                    'provider' => 'google',
-                ])->first();
+                    $userProfile = UserProfileModel::updateOrCreate(
+                        [
+                            'email' => $tokenInfo->json('email'),
+                            'provider' => 'google',
+                        ],
+                        [
+                            'first_name' => $tokenInfo->json('given_name'),
+                            'last_name' => $tokenInfo->json('family_name'),
+                            'image_url' => $tokenInfo->json('picture'),
+                            'email' => $tokenInfo->json('email'),
+                            'password' => Hash::make($tokenInfo->json('sub')),
+                            'phone_number' => null,
+                            'is_verified' => true,
+                            'otp_code' => null,
+                            'otp_code_expire_at' => null,
+                        ]
+                    );
 
-                return response()->json([
-                    'message' => 'Login with Google successful',
-                    'access_token' => $accessToken,
-                    'user_profile_id' => $user->user_profile_id,
-                ], 200);
+                    SocialLoginModel::updateOrCreate(
+                        [
+                            'social_login_provider_id' => $tokenInfo->json('sub'),
+                            'social_login_provider' => 'google',
+                        ],
+                        [
+                            'profile_id' => $userProfile->user_profile_id,
+                            'social_login_provider_id' => $tokenInfo->json('sub'),
+                            'access_token' => $accessToken,
+                        ]
+                    );
+
+                    DB::commit();
+
+                    $userProfile->notify(new UserNotification(
+                        'Welcome Back!',
+                        'You have successfully logged in to your account.',
+                        'login',
+                        $userProfile->user_profile_id
+                    ));
+
+                    $token = $userProfile->createToken('auth_token')->plainTextToken;
+
+                    return response()->json([
+                        'message' => 'Login with Google successful',
+                        'access_token' => $token,
+                        'user_profile_id' => $userProfile->user_profile_id,
+                        'token_type' => 'bearer'
+                    ], 200);
+                }catch (\Exception $exception){
+                    DB::rollBack();
+                    return response()->json(['error' => $exception->getMessage()], 500);
+                }
             }
 
             return response()->json([
@@ -245,6 +273,10 @@ class AuthController extends Controller
 
            if ($tokenInfo->getStatusCode() == 200) {
 
+               try{
+
+                   DB::beginTransaction();
+
                $firstName = explode(' ', $tokenInfo->json('name'))[0];
                $lastName = explode(' ', $tokenInfo->json('name'))[1];
                $picture = $tokenInfo->json('picture');
@@ -262,6 +294,7 @@ class AuthController extends Controller
                        'image_url' => $picture,
                        'email' => $tokenInfo->json('email'),
                        'phone_number' => null,
+                          'password' => Hash::make($tokenInfo->json('id')),
                        'is_verified' => true,
                        'otp_code' => null,
                        'otp_code_expire_at' => null,
@@ -280,19 +313,28 @@ class AuthController extends Controller
                    ]
                );
 
+                DB::commit();
 
-               $user = UserProfileModel::where([
-                   'email' => $tokenInfo->json('email'),
-                   'image_url' => $picture,
-               ])->first();
+                $userProfile->notify(new UserNotification(
+                    'Welcome Back!',
+                    'You have successfully logged in to your account.',
+                    'login',
+                    $userProfile->user_profile_id
+                ));
+
+                $token = $userProfile->createToken('auth_token')->plainTextToken;
 
                return response()->json([
-                   'user_profile_id' => $user->user_profile_id,
+                   'user_profile_id' => $userProfile->user_profile_id,
                    'message' => 'Login with Facebook successful',
-                   'access_token' => $accessToken,
+                   'access_token' => $token,
+                   'token_type' => 'bearer'
                ], 200);
+               }catch (\Exception $exception){
+                     DB::rollBack();
+                     return response()->json(['error' => $exception->getMessage()], 500);
+               }
            }
-
 
            return response()->json([
                'message' => 'login with Facebook failed',
@@ -310,14 +352,31 @@ class AuthController extends Controller
         return response()->json(['message' => 'Logout successful'], 200);
     }
 
-    private function requestOTPCode()
+    public function requestOTPCode() : int
     {
         return rand(1000, 9999);
     }
 
     private function checkExistingUser(Request $request)
     {
-        return UserModel::where('username', $request->username)->exists() || UserProfileModel::where('email', $request->email)->exists();
+        return UserProfileModel::where('email', $request->email)->exists();
     }
 
+
+    public function check()
+    {
+        return response()->json([
+            'authenticated' => Auth::check(),
+            'user' => Auth::check() ? Auth::user() : null,
+        ]);
+    }
+
+    public function broadcastAuth(Request $request)
+    {
+        if (!Auth::check()) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        return response()->json(['message' => 'Authenticated for broadcasting']);
+    }
 }

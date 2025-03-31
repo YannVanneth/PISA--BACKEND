@@ -5,7 +5,7 @@ namespace App\Http\Resources\api\v1;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class RecipeCategoryResource extends JsonResource
+class ReactionCommentModelResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -15,10 +15,10 @@ class RecipeCategoryResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'recipe_categories_id' => $this->recipe_categories_id,
-            'recipe_categories_km' => $this->recipe_categories_km,
-            'recipe_categories_en' => $this->recipe_categories_en,
-            'image_url'=> $this->image_url,
+            'reaction_comment_id' => $this->reaction_comment_id,
+            'comment_id' => new UserCommentModelResource($this->comment),
+            'profile_id' => new UserProfileResource($this->profile),
+            'reaction' => $this->reaction,
         ];
     }
 }

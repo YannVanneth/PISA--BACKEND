@@ -10,7 +10,7 @@ class UserCommentResource extends JsonResource
     {
         return [
             'users_comment_id' => $this->users_comment_id,
-            'recipe_id' => $this->recipe_id,
+            'recipes_id' => $this->recipe_id,
             'profile' => new UserProfileResource($this->profile),
             'comment_content' => $this->comment_content,
             'created_at' => $this->created_at,

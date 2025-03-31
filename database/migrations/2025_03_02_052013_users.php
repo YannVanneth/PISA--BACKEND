@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('last_name');
             $table->string('image_url')->nullable();
             $table->string('email');
+            $table->string('password');
             $table->string('phone_number')->nullable();
             $table->boolean('is_verified')->default(false);
             $table->string('otp_code')->nullable();
@@ -25,14 +26,15 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('users', function (Blueprint $table) {
-            $table->id('users_id')->primary();
-            $table->string('username');
-            $table->string('password');
-            $table->foreignId('profile_id')
-                ->constrained('user_profile', 'user_profile_id');
-            $table->timestamps();
-        });
+//        Schema::create('users', function (Blueprint $table) {
+//            $table->id('users_id')->primary();
+//            $table->string('username');
+//            $table->string('password');
+//            $table->string('email')->unique();
+//            $table->foreignId('profile_id')
+//                ->constrained('user_profile', 'user_profile_id');
+//            $table->timestamps();
+//        });
 
         Schema::create('social_login', function (Blueprint $table){
             $table->id('social_login_id');
@@ -46,11 +48,16 @@ return new class extends Migration
 
         Schema::create('users_comment', function (Blueprint $table) {
             $table->id('users_comment_id');
-            $table->foreignId('recipe_id')
+            $table->foreignId('recipes_id')
                 ->constrained('recipes', 'recipes_id');
             $table->foreignId('profile_id')
                 ->constrained('user_profile', 'user_profile_id');
             $table->string('comment_content');
+            $table->integer('parent_comment_id')->nullable();
+            $table->boolean('is_verified')->default(false);
+            $table->bigInteger('react_count')->default(0);
+            $table->boolean('is_liked')->default(false);
+            $table->longText('replies')->nullable();
             $table->timestamps();
         });
 

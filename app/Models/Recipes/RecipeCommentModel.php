@@ -18,6 +18,7 @@ class RecipeCommentModel extends Model
         'recipes_id',
         'profile_id',
         'comment_text',
+        'parent_comment_id',
     ];
 
     public function profile()
@@ -28,5 +29,15 @@ class RecipeCommentModel extends Model
     public function recipe()
     {
         return $this->belongsTo(RecipeModel::class, 'recipes_id', 'recipes_id');
+    }
+
+    public function parentComment()
+    {
+        return $this->belongsTo(RecipeCommentModel::class, 'parent_comment_id', 'recipe_comments_id');
+    }
+
+    public function replies()
+    {
+        return $this->hasMany(RecipeCommentModel::class, 'parent_comment_id', 'recipe_comments_id');
     }
 } 
