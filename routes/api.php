@@ -1,5 +1,6 @@
 <?php
 
+use App\Events\UserNotification;
 use App\Http\Controllers\api\v1\CookingInstruction\CookingInstructionController;
 use App\Http\Controllers\api\v1\CookingInstruction\CookingStepController;
 use App\Http\Controllers\api\v1\Ingredient\IngredientController;
@@ -17,7 +18,7 @@ use Illuminate\Support\Facades\Route;
 
 # API Version 1 Routes (Protected with auth:sanctum)
 Route::prefix('v1')->group(callback: function () {
-    Route::resource('cookingInstructions', CookingInstructionController::class);
+//    Route::resource('cookingInstructions', CookingInstructionController::class);
     Route::resource('cookingSteps', CookingStepController::class);
     Route::resource('recipeCategories', RecipeCategoryController::class);
     Route::resource('recipes', RecipesController::class);
@@ -32,11 +33,11 @@ Route::prefix('v1')->group(callback: function () {
         Route::post('update/{id}', [UserProfileController::class, 'update']);
 
     });
-  
+
     //favorite -----------------------------------------------------------------------------
     Route::resource('favorite',RecipeFavoriteController::class);
     Route::delete('favorite/remove', [RecipeFavoriteController::class, 'destroy']);
-  
+
     //search --------------------------------------------------------------------------------
     Route::get('search', [SearchController::class, 'index']);
     Route::get('search/ingredients', [SearchController::class, 'searchByIngredients']);
@@ -53,7 +54,18 @@ Route::prefix('v1')->group(callback: function () {
 
 
 Route::get('test', function (){
-    event(new \App\Events\UserNotification("welcome", "hello from server", "assignment", "1"));
+    event(new UserNotification("Someone replied to your comment!"
+        , "@David  is react your comment"
+        , "assignment"
+        , "1"));
+
+//    event(new UserNotification("From Dev Team."
+//        , "We are happy to inform you that you has been the first to comment on this recipe."
+//        , "assignment"
+//        , "1"));
+
+
+//    event(new \App\Events\UserNotification("Someone replied to your comment!", "@David react is react your comment", "assignment", "1"));
     return response()->json(['message' => 'Event has been sent']);
 });
 //->middleware(['auth:sanctum'])->
