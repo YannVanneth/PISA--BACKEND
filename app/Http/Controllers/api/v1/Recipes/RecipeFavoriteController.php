@@ -27,17 +27,8 @@ class RecipeFavoriteController extends Controller
             ->first();
 
         if ($existingFavorite) {
-            if ($existingFavorite->favorite_status != ($validated['favorite_status'] ?? 1)) {
-                $existingFavorite->update([
-                    'favorite_status' => $validated['favorite_status'] ?? 1
-                ]);
-                return response()->json([
-                    'message' => 'Favorite status updated',
-                    'data' => $existingFavorite
-                ], 200);
-            }
             return response()->json([
-                'message' => 'Recipe already in favorites',
+                'message' => 'Recipe already added to favorites',
                 'data' => $existingFavorite
             ], 200);
         }
