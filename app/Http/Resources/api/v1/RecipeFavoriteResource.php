@@ -12,6 +12,7 @@ class RecipeFavoriteResource extends JsonResource
             'recipes_favorite_id' => $this->recipes_favorite_id,
             'recipes_id' => $this->recipes_id,
             'profile' => new UserProfileResource($this->profile),
+            'favorite_status' => $this->favorite_status,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

@@ -41,22 +41,6 @@ class RecipesController extends Controller
                 'total' => $data->total(),
             ]
         ]);
-//        if($data->isEmpty()) {
-//            return response()->json([
-//                'message' => 'No recipes found',
-//                'data' => []
-//            ], 404);
-//        }
-
-//        return response()->json([
-//            'data' => $data->items(),
-//            'meta' => [
-//                'current_page' => $data->currentPage(),
-//                'last_page' => $data->lastPage(),
-//                'per_page' => $data->perPage(),
-//                'total' => $data->total(),
-//            ]
-//        ]);
     }
 
     /**
