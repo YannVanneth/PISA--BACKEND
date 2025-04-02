@@ -32,11 +32,13 @@ Route::prefix('v1')->group(callback: function () {
         Route::post('update/{id}', [UserProfileController::class, 'update']);
 
     });
-  
+
     //favorite -----------------------------------------------------------------------------
-    Route::resource('favorite',RecipeFavoriteController::class);
     Route::delete('favorite/remove', [RecipeFavoriteController::class, 'destroy']);
-  
+    Route::post('favorite/add', [RecipeFavoriteController::class, 'store']);
+    Route::get('favorite/index', [RecipeFavoriteController::class, 'index']);
+    Route::get('favorite/profile', [RecipeFavoriteController::class, 'getByProfile']);
+
     //search --------------------------------------------------------------------------------
     Route::get('search', [SearchController::class, 'index']);
     Route::get('search/ingredients', [SearchController::class, 'searchByIngredients']);
