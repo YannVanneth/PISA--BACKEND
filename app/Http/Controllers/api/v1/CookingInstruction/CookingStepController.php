@@ -10,7 +10,7 @@ class CookingStepController extends Controller
 {
     public function index()
     {
-        return new CookingStepModel([CookingStepModel::all()]);
+        return CookingStepModel::all();
     }
 
     public function store(Request $request)

@@ -33,21 +33,30 @@ class UserCommentController extends Controller
         try{
 
             $request->validate([
-                'recipe_id' => 'required|exists:recipes,recipe_id',
-                'profile_id' => 'required|exists:users,profile_id',
-                'react_count' => 'required|integer',
-                'comment_content' => 'required|string|max:1000',
-                'parent_comment_id' => 'nullable|exists:comments,id',
-                'is_verified' => 'nullable|boolean',
-                'is_liked' => 'nullable|boolean',
-                'replies' => 'nullable|string|max:2000',
+                'users_comment_id' => 'required|integer',
+                'recipes_id' => 'required|integer',
+                'profile_id' => 'required|integer',
+                'replies' => 'required|string',
             ]);
 
-            $userComment = UserCommentModel::updateOrCreate($request->all());
+            $existingComment = UserCommentModel::where('users_comment_id', $request->users_comment_id)
+                ->where('recipes_id', $request->recipes_id)
+                ->where('profile_id', $request->profile_id)
+                ->first();
+
+            if (!$existingComment) {
+                return response()->json([
+                    'message' => 'Comment not found',
+                ], 404);
+            }
+
+            $existingComment->update([
+                'replies' => $request->replies,
+            ]);
 
             return response()->json([
-                'message' => 'Comment posted successfully',
-                'data' => $userComment
+                'message' => 'Comment updated successfully',
+                'data' => $existingComment
             ]);
 
         }catch (\Exception $exception){
