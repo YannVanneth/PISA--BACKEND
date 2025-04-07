@@ -182,80 +182,85 @@ class AuthController extends Controller
         $accessToken = $request->input('access_token');
         $idToken = $request->input('id_token');
 
+        // Validate the access token and id token
         if (!$accessToken) {
             return response()->json(['error' => 'Access token is required'], 400);
         }
 
+        if (!$idToken) {
+            return response()->json(['error' => 'ID token is required'], 400);
+        }
+
         try {
-            $tokenInfo = Http::withOptions(
-                ['verify' => false,]
-            )->get(
-                'https://oauth2.googleapis.com/tokeninfo?id_token=' . $idToken);
+            $tokenInfo = Http::withOptions(['verify' => false])->get(
+                'https://oauth2.googleapis.com/tokeninfo?id_token=' . $idToken
+            );
 
-            if ($tokenInfo->getStatusCode() == 200) {
+            if ($tokenInfo->getStatusCode() !== 200) {
+                return response()->json([
+                    'error' => 'Invalid ID token',
+                ], 401);
+            }
 
-                try {
+            $user = UserProfileModel::where('email', $tokenInfo->json('email'))
+                ->where('provider', 'google')
+                ->first();
 
-                    DB::beginTransaction();
+            if ($user) {
 
-                    $userProfile = UserProfileModel::updateOrCreate(
-                        [
-                            'email' => $tokenInfo->json('email'),
-                            'provider' => 'google',
-                        ],
-                        [
-                            'first_name' => $tokenInfo->json('given_name'),
-                            'last_name' => $tokenInfo->json('family_name'),
-                            'image_url' => $tokenInfo->json('picture'),
-                            'email' => $tokenInfo->json('email'),
-                            'password' => Hash::make($tokenInfo->json('sub')),
-                            'phone_number' => null,
-                            'is_verified' => true,
-                            'otp_code' => null,
-                            'otp_code_expire_at' => null,
-                        ]
-                    );
+                SocialLoginModel::updateOrCreate(
+                    ['social_login_provider_id' => $tokenInfo->json('sub'), 'social_login_provider' => 'google'],
+                    ['access_token' => $accessToken]
+                );
 
-                    SocialLoginModel::updateOrCreate(
-                        [
-                            'social_login_provider_id' => $tokenInfo->json('sub'),
-                            'social_login_provider' => 'google',
-                        ],
-                        [
-                            'profile_id' => $userProfile->user_profile_id,
-                            'social_login_provider_id' => $tokenInfo->json('sub'),
-                            'access_token' => $accessToken,
-                        ]
-                    );
+                $token = $user->createToken('auth_token')->plainTextToken;
 
-                    DB::commit();
+                return response()->json([
+                    'message' => 'Login successful',
+                    'access_token' => $token,
+                    'user_profile_id' => $user->user_profile_id,
+                    'token_type' => 'bearer'
+                ], 200);
+            }
 
-                    $userProfile->notify(new UserNotification(
-                        'Welcome Back!',
-                        'You have successfully logged in to your account.',
-                        'login',
-                        $userProfile->user_profile_id
-                    ));
+            else {
 
-                    $token = $userProfile->createToken('auth_token')->plainTextToken;
+             DB::beginTransaction();
 
-                    return response()->json([
-                        'message' => 'Login with Google successful',
-                        'access_token' => $token,
-                        'user_profile_id' => $userProfile->user_profile_id,
-                        'token_type' => 'bearer'
-                    ], 200);
-                }catch (\Exception $exception){
+            try {
+                $userProfile = UserProfileModel::create([
+                    'email' => $tokenInfo->json('email'),
+                    'first_name' => $tokenInfo->json('given_name'),
+                    'last_name' => $tokenInfo->json('family_name'),
+                    'image_url' => $tokenInfo->json('picture'),
+                    'provider' => 'google',
+                    'password' => Hash::make($tokenInfo->json('sub')),
+                    'is_verified' => true,
+                ]);
+
+                SocialLoginModel::create([
+                    'social_login_provider_id' => $tokenInfo->json('sub'),
+                    'social_login_provider' => 'google',
+                    'profile_id' => $userProfile->user_profile_id,
+                    'access_token' => $accessToken,
+                ]);
+
+                DB::commit();
+
+                $token = $userProfile->createToken('auth_token')->plainTextToken;
+
+                return response()->json([
+                    'message' => 'Login with Google successful',
+                    'access_token' => $token,
+                    'user_profile_id' => $userProfile->user_profile_id,
+                    'token_type' => 'bearer'
+                ], 200);
+
+                } catch (\Exception $exception) {
                     DB::rollBack();
                     return response()->json(['error' => $exception->getMessage()], 500);
                 }
             }
-
-            return response()->json([
-               'message' => 'Login with Google failed',
-            ], 401);
-
-
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 401);
         }
@@ -271,75 +276,94 @@ class AuthController extends Controller
                ['verify' => false,]
            )->get('https://graph.facebook.com/me?fields=id,name,email,picture&access_token=' . $accessToken);
 
-           if ($tokenInfo->getStatusCode() == 200) {
+          if ($tokenInfo->getStatusCode() !== 200) {
+            return response()->json(['error' => 'Invalid access token'], 401);
+          }
 
-               try{
+           $user = UserProfileModel::where('email', $tokenInfo->json('email'))
+               ->where('provider', 'google')
+               ->first();
 
-                   DB::beginTransaction();
+              if ($user) {
 
-               $firstName = explode(' ', $tokenInfo->json('name'))[0];
-               $lastName = explode(' ', $tokenInfo->json('name'))[1];
-               $picture = $tokenInfo->json('picture');
-               $picture = $picture['data'];
-               $picture = $picture['url'];
+                  SocialLoginModel::create(
+                      [
+                          'social_login_provider_id' => $tokenInfo->json('id'),
+                          'social_login_provider' => 'facebook',
+                      ],
+                      [
+                          'social_login_provider_id' => $tokenInfo->json('id'),
+                          'access_token' => $accessToken,
+                          'profile_id' => $user->user_profile_id,
+                      ]
+                  );
 
-               $userProfile = UserProfileModel::updateOrCreate(
-                   [
-                       'email' => $tokenInfo->json('email'),
-                       'provider' => 'facebook',
-                   ],
-                   [
-                       'first_name' => $firstName,
-                       'last_name' => $lastName,
-                       'image_url' => $picture,
-                       'email' => $tokenInfo->json('email'),
-                       'phone_number' => null,
-                          'password' => Hash::make($tokenInfo->json('id')),
-                       'is_verified' => true,
-                       'otp_code' => null,
-                       'otp_code_expire_at' => null,
-                   ]
-               );
+                  $token = $user->createToken('auth_token')->plainTextToken;
 
-               SocialLoginModel::updateOrCreate(
-                   [
-                       'social_login_provider_id' => $tokenInfo->json('id'),
-                       'social_login_provider' => 'facebook',
-                   ],
-                   [
-                       'social_login_provider_id' => $tokenInfo->json('id'),
-                       'access_token' => $accessToken,
-                       'profile_id' => $userProfile->user_profile_id,
-                   ]
-               );
+                  return response()->json([
+                      'user_profile_id' => $user->user_profile_id,
+                      'message' => 'Login with Facebook successful',
+                      'access_token' => $token,
+                      'token_type' => 'bearer'
+                  ], 200);
 
-                DB::commit();
+              }else{
+                  try{
 
-                $userProfile->notify(new UserNotification(
-                    'Welcome Back!',
-                    'You have successfully logged in to your account.',
-                    'login',
-                    $userProfile->user_profile_id
-                ));
+                      DB::beginTransaction();
 
-                $token = $userProfile->createToken('auth_token')->plainTextToken;
+                      $firstName = explode(' ', $tokenInfo->json('name'))[0];
+                      $lastName = explode(' ', $tokenInfo->json('name'))[1];
+                      $picture = $tokenInfo->json('picture');
+                      $picture = $picture['data'];
+                      $picture = $picture['url'];
 
-               return response()->json([
-                   'user_profile_id' => $userProfile->user_profile_id,
-                   'message' => 'Login with Facebook successful',
-                   'access_token' => $token,
-                   'token_type' => 'bearer'
-               ], 200);
-               }catch (\Exception $exception){
+                      $userProfile = UserProfileModel::create(
+                          [
+                              'email' => $tokenInfo->json('email'),
+                              'provider' => 'facebook',
+                          ],
+                          [
+                              'first_name' => $firstName,
+                              'last_name' => $lastName,
+                              'image_url' => $picture,
+                              'email' => $tokenInfo->json('email'),
+                              'phone_number' => null,
+                              'password' => Hash::make($tokenInfo->json('id')),
+                              'is_verified' => true,
+                              'otp_code' => null,
+                              'otp_code_expire_at' => null,
+                          ]
+                      );
+
+                      SocialLoginModel::create(
+                          [
+                              'social_login_provider_id' => $tokenInfo->json('id'),
+                              'social_login_provider' => 'facebook',
+                          ],
+                          [
+                              'social_login_provider_id' => $tokenInfo->json('id'),
+                              'access_token' => $accessToken,
+                              'profile_id' => $userProfile->user_profile_id,
+                          ]
+                      );
+
+                      DB::commit();
+
+                      $token = $userProfile->createToken('auth_token')->plainTextToken;
+
+                      return response()->json([
+                          'user_profile_id' => $userProfile->user_profile_id,
+                          'message' => 'Login with Facebook successful',
+                          'access_token' => $token,
+                          'token_type' => 'bearer'
+                      ], 200);
+              }
+              catch (\Exception $exception){
                      DB::rollBack();
                      return response()->json(['error' => $exception->getMessage()], 500);
                }
            }
-
-           return response()->json([
-               'message' => 'login with Facebook failed',
-           ], 401);
-
        }catch (\Exception $e){
            return response()->json(['error' => $e->getMessage()], 401);
        }
@@ -361,7 +385,6 @@ class AuthController extends Controller
     {
         return UserProfileModel::where('email', $request->email)->exists();
     }
-
 
     public function check()
     {
