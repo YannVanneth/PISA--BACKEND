@@ -52,9 +52,14 @@ class RecipeModel extends Model
     {
         return $this->hasMany(IngredientModel::class, 'recipes_id', 'recipes_id');
     }
+    public function favorites()
+    {
+        return $this->hasMany(RecipeFavoriteModel::class, 'recipes_id', 'recipes_id');
+    }
 
     public function comments()
     {
         return $this->hasMany(UserCommentModel::class, 'recipes_id', 'recipes_id');
     }
+
 }

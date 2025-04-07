@@ -18,7 +18,6 @@ use Illuminate\Support\Facades\Route;
 
 # API Version 1 Routes (Protected with auth:sanctum)
 Route::prefix('v1')->group(callback: function () {
-//    Route::resource('cookingInstructions', CookingInstructionController::class);
     Route::resource('cookingSteps', CookingStepController::class);
     Route::resource('recipeCategories', RecipeCategoryController::class);
     Route::resource('recipes', RecipesController::class);
@@ -35,8 +34,11 @@ Route::prefix('v1')->group(callback: function () {
     });
 
     //favorite -----------------------------------------------------------------------------
-    Route::resource('favorite',RecipeFavoriteController::class);
     Route::delete('favorite/remove', [RecipeFavoriteController::class, 'destroy']);
+
+    Route::post('favorite/add', [RecipeFavoriteController::class, 'store']);
+    Route::get('favorite/index', [RecipeFavoriteController::class, 'index']);
+    Route::get('favorite/profile', [RecipeFavoriteController::class, 'getByProfile']);
 
     //search --------------------------------------------------------------------------------
     Route::get('search', [SearchController::class, 'index']);

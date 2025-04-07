@@ -16,42 +16,35 @@ class RecipeFavoriteController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'recipes_id' => 'required|integer|exists:recipes,recipes_id',
-            'profile_id' => 'required|integer|exists:user_profile,user_profile_id',
-            'favorite_status' => 'sometimes|boolean'
-        ]);
 
-        $existingFavorite = RecipeFavoriteModel::where('recipes_id', $validated['recipes_id'])
-            ->where('profile_id', $validated['profile_id'])
-            ->first();
+        try {
+            $validated = $request->validate([
+                'recipes_id' => 'required|integer|exists:recipes,recipes_id',
+                'profile_id' => 'required|integer|exists:user_profile,user_profile_id',
+                'favorite_status' => 'sometimes|integer'
+            ]);
 
-        if ($existingFavorite) {
-            if ($existingFavorite->favorite_status != ($validated['favorite_status'] ?? 1)) {
-                $existingFavorite->update([
-                    'favorite_status' => $validated['favorite_status'] ?? 1
-                ]);
-                return response()->json([
-                    'message' => 'Favorite status updated',
-                    'data' => $existingFavorite
-                ], 200);
+            $favoriteStatus = (string)($validated['favorite_status'] ?? '1') === '1';
+
+            $exists = RecipeFavoriteModel::where('recipes_id', $validated['recipes_id'])
+                ->where('profile_id', $validated['profile_id'])
+                ->exists();
+
+            if ($exists) {
+                return response()->json(['message' => 'This recipe is already in your favorites'], 409);
             }
-            return response()->json([
-                'message' => 'Recipe already in favorites',
-                'data' => $existingFavorite
-            ], 200);
+
+            RecipeFavoriteModel::create([
+                'recipes_id' => $validated['recipes_id'],
+                'profile_id' => $validated['profile_id'],
+                'favorite_status' => $favoriteStatus
+            ]);
+            return response()->json(['message' => 'Recipe added to favorites successfully'], 201);
+        } catch (\Exception $exception) {
+            return response()->json(['error' => $exception->getMessage()], 500);
         }
 
-        $favorite = RecipeFavoriteModel::create([
-            'recipes_id' => $validated['recipes_id'],
-            'profile_id' => $validated['profile_id'],
-            'favorite_status' => $validated['favorite_status'] ?? 1,
-        ]);
 
-        return response()->json([
-            'message' => 'Added to favorites successfully',
-            'data' => $favorite
-        ], 201);
     }
 
     public function show($id)
@@ -110,5 +103,49 @@ class RecipeFavoriteController extends Controller
             'success' => false,
             'message' => 'Favorite item not found'
         ], 404);
+    }
+
+    public function getByProfile(Request $request): \Illuminate\Http\JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'per_page' => 'required|integer|min:1|max:100',
+                'page' => 'required|integer|min:1',
+                'profile_id' => 'required|integer|exists:user_profile,user_profile_id',
+            ]);
+
+            $favorites = RecipeFavoriteModel::where('profile_id', $validated['profile_id'])
+                ->with(['recipe' => function($query) {
+                    $query->select([
+                        'recipes_id',
+                        'recipes_title_km',
+                        'recipes_title_en',
+                        'recipes_image_url'
+                    ]);
+                }])
+                ->paginate(
+                    $validated['per_page'],
+                    ['*'],
+                    'page',
+                    $validated['page']
+                );
+
+            return response()->json([
+                'success' => true,
+                'data' => $favorites->items(),
+                'pagination' => [
+                    'current_page' => $favorites->currentPage(),
+                    'per_page' => $favorites->perPage(),
+                    'total' => $favorites->total(),
+                    'last_page' => $favorites->lastPage(),
+                ]
+            ]);
+
+        } catch (\Exception $exception) {
+            return response()->json([
+                'success' => false,
+                'error' => $exception->getMessage()
+            ], 500);
+        }
     }
 }
