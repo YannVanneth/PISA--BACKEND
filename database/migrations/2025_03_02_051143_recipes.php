@@ -24,7 +24,7 @@ return new class extends Migration {
             $table->string('recipes_title_en');
             $table->text('recipes_description_km');
             $table->text('recipes_description_en');
-            $table->string('recipes_image_url')->nullable();
+            $table->text('recipes_image_url')->nullable();
             $table->string('recipes_video_url')->nullable();
             $table->boolean('is_breakfast')->default(false);
             $table->string('recipes_created_by')->nullable();
