@@ -10,19 +10,17 @@ class UserCommentModel extends Model
 {
     use HasFactory;
 
-    protected $table = 'users_comment';
+    protected $table = 'user_comments';
 
     protected $primaryKey = 'users_comment_id';
 
     protected $fillable = [
-        'recipes_id',
+        'recipe_id',
         'profile_id',
         'react_count',
-        'comment_content',
+        'content',
         'parent_comment_id',
         'is_verified',
-        'is_liked',
-        'replies',
     ];
 
     public function profile(): \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -32,6 +30,16 @@ class UserCommentModel extends Model
 
     public function recipe(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(RecipeModel::class, 'recipes_id', 'recipes_id');
+        return $this->belongsTo(RecipeModel::class, 'recipes_id', 'recipe_id');
+    }
+
+    public function replies()
+    {
+        return $this->hasMany(UserCommentModel::class, 'parent_comment_id');
+    }
+
+    public function reactions()
+    {
+        return $this->hasMany(CommentReactionModel::class, 'user_id', 'users_comment_id');
     }
 }

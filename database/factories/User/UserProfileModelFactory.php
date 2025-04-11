@@ -21,6 +21,7 @@ class UserProfileModelFactory extends Factory
             'last_name' => $this->faker->lastName,
             'image_url' => $this->faker->imageUrl(),
             'email' => $this->faker->unique()->safeEmail,
+            'password' => $this->faker->password,
             'provider' => $this->faker->randomElement(['facebook', 'google']),
             'phone_number' => $this->faker->phoneNumber,
             'is_verified' => $this->faker->boolean,

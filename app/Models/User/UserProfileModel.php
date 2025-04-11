@@ -29,10 +29,10 @@ class UserProfileModel extends Authenticatable
             'otp_code',
             'otp_code_expire_at',
     ];
-
     protected $hidden = [
         'password',
-    ];
+    ]
+;
 
 
     public function socialLogins()

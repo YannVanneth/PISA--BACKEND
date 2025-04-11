@@ -12,13 +12,25 @@ class UserCommentController extends Controller
 {
     public function index(Request $request)
     {
-        if($request->query('recipes_id')){
 
-            $recipes = UserCommentModel::where('recipes_id', $request->query('recipes_id'))->get();
+
+        if($request->query('recipe_id')){
+
+            $comments = UserCommentModel::with(['profile', 'replies.profile'])
+                ->where('recipe_id', $request->query('recipe_id'))
+                ->whereNull('parent_comment_id')
+                ->orderBy('created_at', 'asc')
+                ->get();
+
+            if($comments->isEmpty()){
+                return response()->json([
+                    'message' => 'No comments found for this recipe',
+                ], 404);
+            }
 
             return \response()->json([
                 'message' => 'Comments for recipe',
-                'data' => UserCommentModelResource::collection($recipes)
+                'data' => UserCommentModelResource::collection($comments)
             ]);
         }
 
