@@ -26,15 +26,15 @@ return new class extends Migration
             $table->timestamps();
         });
 
-//        Schema::create('users', function (Blueprint $table) {
-//            $table->id('users_id')->primary();
-//            $table->string('username');
-//            $table->string('password');
-//            $table->string('email')->unique();
-//            $table->foreignId('profile_id')
-//                ->constrained('user_profile', 'user_profile_id');
-//            $table->timestamps();
-//        });
+        Schema::create('admin', function (Blueprint $table) {
+            $table->id('admin_id')->primary();
+            $table->string('username');
+            $table->string('password');
+            $table->string('email')->unique();
+            $table->foreignId('profile_id')
+                ->constrained('user_profile', 'user_profile_id');
+            $table->timestamps();
+        });
 
         Schema::create('social_login', function (Blueprint $table){
             $table->id('social_login_id');
@@ -46,21 +46,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('users_comment', function (Blueprint $table) {
-            $table->id('users_comment_id');
-            $table->foreignId('recipes_id')
-                ->constrained('recipes', 'recipes_id');
-            $table->foreignId('profile_id')
-                ->constrained('user_profile', 'user_profile_id');
-            $table->string('comment_content');
-            $table->integer('parent_comment_id')->nullable();
-            $table->boolean('is_verified')->default(false);
-            $table->bigInteger('react_count')->default(0);
-            $table->boolean('is_liked')->default(false);
-            $table->longText('replies')->nullable();
-            $table->timestamps();
-        });
-
         Schema::create('recipes_rating', function (Blueprint $table) {
             $table->id('recipes_rating_id')->primary();
             $table->foreignId('recipes_id')
@@ -69,15 +54,6 @@ return new class extends Migration
                 ->constrained('user_profile', 'user_profile_id');
             $table->double('rating_value');
         });
-
-//        Schema::create('recipes_favorite', function (Blueprint $table) {
-//            $table->id('recipes_favorite');
-//            $table->foreignId('recipes_id')
-//                ->constrained('recipes', 'recipes_id');
-//            $table->foreignId('profile_id')
-//                ->constrained('user_profile', 'user_profile_id');
-//            $table->timestamps();
-//        });
     }
 
     /**
@@ -86,9 +62,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('users');
-        Schema::dropIfExists('users_comment');
         Schema::dropIfExists('recipes_rating');
-//        Schema::dropIfExists('recipes_favorite');
         Schema::dropIfExists('social_login');
         Schema::dropIfExists('user_profile');
     }

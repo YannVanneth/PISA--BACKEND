@@ -16,17 +16,16 @@ class UserCommentModelResource extends JsonResource
     {
         return [
             'users_comment_id' => $this->users_comment_id,
-            'recipes_id' => $this->recipes_id,
+            'recipes_id' => $this->recipe_id,
             'profile_id' => new UserProfileResource($this->profile),
-            'username' => $this->profile->username,
-            'react_count' => $this->react_count,
+            'react_count' => $this->reactions->count(),
             'is_verified' => $this->is_verified,
-            'is_liked' => $this->is_liked,
-            'replies' => $this->replies,
-            'parent_comment_id' => $this->parent_comment_id,
-            'comment_content' => $this->comment_content,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
+            'replies' => UserCommentModelResource::collection($this->whenLoaded('replies')),
+            'contents' => $this->content,
+            'is_liked' => (bool)$this->reactions->contains('user_id', auth()->id()),
+            'parent_comment_id' => new UserCommentModelResource($this->parentComment),
+            'created_at' => $this->created_at ? $this->created_at->toDateTimeString() : null,
+            'updated_at' => $this->updated_at ? $this->updated_at->toDateTimeString() : null,
         ];
     }
 }
