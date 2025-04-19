@@ -44,7 +44,7 @@ Route::prefix('auth')->group(function () {
 
 
 # API Version 1 Routes (Protected with auth:sanctum)
-Route::prefix('v1')->group(callback: function () {
+Route::prefix('v1')->middleware(['auth:sanctum'])->group(callback: function () {
     Route::resource('cookingSteps', CookingStepController::class);
     Route::resource('recipeCategories', RecipeCategoryController::class);
     Route::resource('recipes', RecipesController::class);
@@ -73,12 +73,7 @@ Route::prefix('v1')->group(callback: function () {
     Route::get('search/categoryies', [SearchController::class, 'searchByCategory']);
     Route::get('search/recipes', [SearchController::class, 'searchByRecipes']);
 
-    # User Comment Routes
-    Route::prefix('comment')->group(callback: function () {
-        Route::post('handleComment', [UserCommentController::class, 'handleComment']);
-        Route::post('handleCommentReply', [UserCommentController::class, 'handleCommentReply']);
-        Route::get('index', [UserCommentController::class, 'index']);
-    });
+    require __DIR__ . '/comment.php';
 });
 
 
@@ -100,3 +95,4 @@ Route::get('test', function (){
 //->middleware(['auth:sanctum'])->
 
 //require __DIR__ . '/auth.php';
+

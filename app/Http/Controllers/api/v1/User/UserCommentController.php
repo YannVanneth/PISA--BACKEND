@@ -5,6 +5,7 @@ namespace App\Http\Controllers\api\v1\User;
 use App\Events\CommentPosted;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\api\v1\UserCommentModelResource;
+use App\Models\User\CommentReactionModel;
 use App\Models\User\UserCommentModel;
 use Illuminate\Http\Request;
 
@@ -12,25 +13,23 @@ class UserCommentController extends Controller
 {
     public function index(Request $request)
     {
+        $recipeId = $request->query('recipe_id');
 
-
-        if($request->query('recipe_id')){
-
-            $comments = UserCommentModel::with(['profile', 'replies.profile'])
-                ->where('recipe_id', $request->query('recipe_id'))
+        if ($recipeId) {
+            $comments = UserCommentModel::with(['profile', 'replies.profile','replies.parentComment.profile'])
+                ->where('recipe_id', $recipeId)
                 ->whereNull('parent_comment_id')
                 ->orderBy('created_at', 'asc')
                 ->get();
 
-            if($comments->isEmpty()){
+            if ($comments->isEmpty()) {
                 return response()->json([
                     'message' => 'No comments found for this recipe',
                 ], 404);
             }
-
-            return \response()->json([
+            return response()->json([
                 'message' => 'Comments for recipe',
-                'data' => UserCommentModelResource::collection($comments)
+                'data' => UserCommentModelResource::collection($comments),
             ]);
         }
 
@@ -40,35 +39,35 @@ class UserCommentController extends Controller
         ]);
     }
 
-    public function handleCommentReply(Request $request)
-    {
+    public function handleCommentReaction(Request $request){
         try{
 
             $request->validate([
-                'users_comment_id' => 'required|integer',
-                'recipes_id' => 'required|integer',
-                'profile_id' => 'required|integer',
-                'replies' => 'required|string',
+                'comment_id' => 'required|integer',
+                'is_liked' => 'required|boolean',
             ]);
 
-            $existingComment = UserCommentModel::where('users_comment_id', $request->users_comment_id)
-                ->where('recipes_id', $request->recipes_id)
-                ->where('profile_id', $request->profile_id)
-                ->first();
+            $userComment = UserCommentModel::find($request->comment_id);
 
-            if (!$existingComment) {
+            if (!$userComment) {
                 return response()->json([
                     'message' => 'Comment not found',
                 ], 404);
             }
 
-            $existingComment->update([
-                'replies' => $request->replies,
-            ]);
+            $reaction = CommentReactionModel::updateOrCreate(
+                [
+                    'comment_id' => $request->comment_id,
+                    'user_id' => auth()->id(),
+                ],
+                [
+                    'is_liked' => $request->is_liked,
+                ]
+            );
 
             return response()->json([
-                'message' => 'Comment updated successfully',
-                'data' => $existingComment
+                'message' => 'Reaction updated successfully',
+                'data' => $reaction
             ]);
 
         }catch (\Exception $exception){
@@ -78,23 +77,32 @@ class UserCommentController extends Controller
             ], 500);
         }
     }
-
     public function handleComment(Request $request)
     {
         try{
 
+            /*
+             * Validate the request
+             *
+             * require :
+             *    - recipes_id
+             *    - contents
+             *    - profile_id
+             * */
+
+
             $request->validate(
                 [
-                    'recipes_id' => 'required|exists:recipes,recipes_id',
-                    'profile_id' => 'required|exists:user_profile,user_profile_id',
-                    'react_count' => 'required|integer',
-                    'comment_content' => 'required|string|max:1000',
-                    'is_verified' => 'nullable|boolean',
-                    'is_liked' => 'nullable|boolean',
-                    'replies' => 'nullable|string|max:2000',
+                    'recipes_id' => 'required',
+                    'contents' => 'required|string|max:1000',
                 ]);
 
-            $userComment = UserCommentModel::create($request->all());
+            $userComment = UserCommentModel::create([
+                'recipe_id' => $request->recipes_id,
+                'profile_id' => auth()->id,
+                'content' => $request->contents,
+                'parent_comment_id' => $request->parent_comment_id ?? null,
+            ]);
 
             return response()->json([
                 'message' => 'Comment posted successfully',
@@ -107,59 +115,5 @@ class UserCommentController extends Controller
                 'message' => 'Ops! Something when wrong!'
             ], 500);
         }
-    }
-
-    public function store(Request $request)
-    {
-        try{
-
-            $request->validate([
-                'recipe_id' => 'required',
-                'profile_id' => 'required',
-                'react_count' => 'required',
-                'comment_content' => 'required',
-                'parent_comment_id' => 'nullable',
-                'is_verified' => 'nullable',
-                'is_liked' => 'nullable',
-                'replies' => 'nullable',
-            ]);
-
-            $userComment = UserCommentModel::create($request->all());
-
-            event(new CommentPosted($request->recipe_id, $userComment));
-
-            return $userComment;
-
-        }catch (\Exception $e){
-            return response()->json(['error' => $e->getMessage(), 'message' => 'Ops! Something when wrong!'], 500);
-        }
-    }
-
-    public function show($id)
-    {
-        try{
-            $comment = UserCommentModel::find($id);
-
-            if(!$comment){
-                return response()->json(['message' => 'comment not found!'], 404);
-            }
-
-            return $comment;
-        }catch (\Exception $e){
-            return response()->json(['error' => $e->getMessage(), 'message' => 'Ops! Something when wrong!'], 500);
-        }
-    }
-
-    public function update(Request $request, $id)
-    {
-        $userComment = UserCommentModel::findOrFail($id);
-        $userComment->update($request->all());
-        return $userComment;
-    }
-
-    public function destroy($id)
-    {
-        UserCommentModel::destroy($id);
-        return response()->noContent();
     }
 }

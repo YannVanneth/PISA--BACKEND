@@ -21,6 +21,8 @@ class UserCommentModel extends Model
         'content',
         'parent_comment_id',
         'is_verified',
+        'created_at',
+        'updated_at',
     ];
 
     public function profile(): \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -42,4 +44,10 @@ class UserCommentModel extends Model
     {
         return $this->hasMany(CommentReactionModel::class, 'user_id', 'users_comment_id');
     }
+
+    public function parentComment()
+    {
+        return $this->belongsTo(UserCommentModel::class, 'parent_comment_id', 'users_comment_id');
+    }
+
 }
