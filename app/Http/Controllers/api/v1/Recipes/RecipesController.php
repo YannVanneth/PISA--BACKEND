@@ -21,26 +21,26 @@ class RecipesController extends Controller
      */
     public function index(Request $request)
     {
-        $page = (int)$request->get('page', 1);
-        $perPage = (int)$request->get('per_page', 10);
-        $data = RecipeModel::paginate($perPage,['*'], 'page', $page);
+        $perPage = $request->query('per_page', 10);
+        $data = RecipeModel::paginate($perPage);
 
         if($data->isEmpty()){
             return response()->json([
                 'message' => 'No recipes found',
-                'data' => RecipesResource::collection($data)
+                'data' => []
             ], 404);
         }
 
-        $data = RecipesResource::collection($data);
-        return RecipesResource::collection($data)->additional([
+        // Use JSON_UNESCAPED_UNICODE to properly handle Khmer characters
+        return response()->json([
+            'data' => RecipesResource::collection($data),
             'meta' => [
                 'current_page' => $data->currentPage(),
                 'last_page' => $data->lastPage(),
                 'per_page' => $data->perPage(),
                 'total' => $data->total(),
             ]
-        ]);
+        ], 200, [], JSON_UNESCAPED_UNICODE);
     }
 
     /**
