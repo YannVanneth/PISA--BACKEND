@@ -32,15 +32,11 @@ class UserProfileController extends Controller
     {
         try {
             $request->validate([
-                'first_name' => 'sometimes|string|max:60',
-                'last_name' => 'sometimes|string|max:60',
-                'image_url' => 'sometimes|file|mimes:jpeg,png,jpg,gif,svg|max:2048',
-                'password' => 'sometimes|string|min:8'
+                'first_name' => 'string|max:60|nullable',
+                'last_name' => 'string|max:60|nullable',
+                'image_url' => 'file|mimes:jpeg,png,jpg,gif,svg|max:204|nullable',
+                'password' => 'string|min:8|nullable',
             ]);
-
-            if(!$request->hasAny(['first_name', 'last_name', 'password'])){
-                return response()->json(['message' => 'No fields to update'], 400);
-            }
 
             DB::beginTransaction();
             $userProfile = UserProfileModel::find($id);
@@ -63,7 +59,7 @@ class UserProfileController extends Controller
 
             if ($request->hasFile('image_url')) {
 
-                $image = $request->file('user_profile_image');
+                $image = $request->file('image_url');
                 $imageName = time() . '.' . $image->getClientOriginalExtension();
                 $image->move(public_path('images'), $imageName);
                 $imageURL = url('images/' . $imageName);
@@ -89,7 +85,7 @@ class UserProfileController extends Controller
             DB::commit();
             return response()->json([
                 'message' => 'User updated successfully',
-                'user' => $userProfile,
+                'data' => $userProfile,
             ]);
 
         } catch (\Exception $exception) {

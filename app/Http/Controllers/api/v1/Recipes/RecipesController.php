@@ -21,26 +21,49 @@ class RecipesController extends Controller
      */
     public function index(Request $request)
     {
+        $category = $request->get('category_id', null);
         $perPage = $request->query('per_page', 10);
         $data = RecipeModel::paginate($perPage);
 
         if($data->isEmpty()){
             return response()->json([
                 'message' => 'No recipes found',
-                'data' => []
+                'data' => RecipesResource::collection($data)
             ], 404);
         }
 
-        // Use JSON_UNESCAPED_UNICODE to properly handle Khmer characters
-        return response()->json([
-            'data' => RecipesResource::collection($data),
+        if($category != null){
+
+            # check if category is a number
+            if(!is_numeric($category)){
+                return response()->json([
+                    'message' => 'Category ID must be a number'
+                ], 422);
+            }
+
+            $temp = RecipeModel::where('recipe_categories_id', $category)
+                ->paginate($perPage);
+
+            if($temp->isEmpty()){
+                return response()->json([
+                    'message' => 'No recipes found',
+                    'data' => RecipesResource::collection($data)
+                ], 404);
+            }
+
+            $data = $temp;
+        }
+
+        $data = RecipesResource::collection($data);
+
+        return RecipesResource::collection($data)->additional([
             'meta' => [
                 'current_page' => $data->currentPage(),
                 'last_page' => $data->lastPage(),
                 'per_page' => $data->perPage(),
                 'total' => $data->total(),
             ]
-        ], 200, [], JSON_UNESCAPED_UNICODE);
+        ]);
     }
 
     /**
