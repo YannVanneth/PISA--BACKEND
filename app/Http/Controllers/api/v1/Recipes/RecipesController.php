@@ -23,6 +23,8 @@ class RecipesController extends Controller
     {
         $page = (int)$request->get('page', 1);
         $perPage = (int)$request->get('per_page', 10);
+        $category = $request->get('category_id', null);
+
         $data = RecipeModel::paginate($perPage,['*'], 'page', $page);
 
         if($data->isEmpty()){
@@ -32,7 +34,30 @@ class RecipesController extends Controller
             ], 404);
         }
 
+        if($category != null){
+
+            # check if category is a number
+            if(!is_numeric($category)){
+                return response()->json([
+                    'message' => 'Category ID must be a number'
+                ], 422);
+            }
+
+            $temp = RecipeModel::where('recipe_categories_id', $category)
+                ->paginate($perPage,['*'], 'page', $page);
+
+            if($temp->isEmpty()){
+                return response()->json([
+                    'message' => 'No recipes found',
+                    'data' => RecipesResource::collection($data)
+                ], 404);
+            }
+
+            $data = $temp;
+        }
+
         $data = RecipesResource::collection($data);
+
         return RecipesResource::collection($data)->additional([
             'meta' => [
                 'current_page' => $data->currentPage(),

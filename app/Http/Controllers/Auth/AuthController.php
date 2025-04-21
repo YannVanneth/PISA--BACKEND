@@ -97,7 +97,7 @@ class AuthController extends Controller
             'token' => $token,
             'user_profile' => $userProfile,
             'is_available' => true,
-            'token_type' => 'bearer',
+            'token_type' => 'Bearer',
         ], 200);
         }catch (\Exception $exception){
             DB::rollBack();
@@ -217,9 +217,9 @@ class AuthController extends Controller
 
                 return response()->json([
                     'message' => 'Login successful',
-                    'access_token' => $token,
+                    'token' => $token,
                     'user_profile_id' => $user->user_profile_id,
-                    'token_type' => 'bearer'
+                    'token_type' => 'Bearer'
                 ], 200);
             }
 
@@ -251,7 +251,7 @@ class AuthController extends Controller
 
                 return response()->json([
                     'message' => 'Login with Google successful',
-                    'access_token' => $token,
+                    'token' => $token,
                     'user_profile_id' => $userProfile->user_profile_id,
                     'token_type' => 'bearer'
                 ], 200);
@@ -303,7 +303,7 @@ class AuthController extends Controller
                   return response()->json([
                       'user_profile_id' => $user->user_profile_id,
                       'message' => 'Login with Facebook successful',
-                      'access_token' => $token,
+                      'token' => $token,
                       'token_type' => 'bearer'
                   ], 200);
 
@@ -355,8 +355,8 @@ class AuthController extends Controller
                       return response()->json([
                           'user_profile_id' => $userProfile->user_profile_id,
                           'message' => 'Login with Facebook successful',
-                          'access_token' => $token,
-                          'token_type' => 'bearer'
+                          'token' => $token,
+                          'token_type' => 'Bearer'
                       ], 200);
               }
               catch (\Exception $exception){

@@ -16,11 +16,9 @@ class UserCommentModelFactory extends Factory{
             'recipe_id' => RecipeModel::factory(),
             'profile_id' => UserProfileModel::factory(),
             'react_count' => $this->faker->randomDigit,
-            'comment_content' => $this->faker->sentence,
-            'parent_comment_id' => null,
+            'content' => $this->faker->sentence,
+            'parent_comment_id' => UserCommentModel::factory(),
             'is_verified' => $this->faker->boolean,
-            'is_liked' => $this->faker->boolean,
-            'replies' => $this->faker->sentence,
         ];
     }
 }
