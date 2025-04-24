@@ -7,6 +7,7 @@ use App\Http\Resources\api\v1\RecipesResource;
 use App\Models\Recipes\RecipeModel;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class RecipesController extends Controller
@@ -23,40 +24,39 @@ class RecipesController extends Controller
     {
         $category = $request->get('category_id', null);
         $perPage = $request->query('per_page', 10);
-        $data = RecipeModel::paginate($perPage);
+        $sortByRating = $request->query('sort_rating', null);
 
-        if($data->isEmpty()){
-            return response()->json([
-                'message' => 'No recipes found',
-                'data' => RecipesResource::collection($data)
-            ], 404);
-        }
+        $query = RecipeModel::query()->with(['ratings', 'category', 'ingredients', 'cookingSteps', 'favorites']);
 
-        if($category != null){
-
-            # check if category is a number
-            if(!is_numeric($category)){
+        if ($category != null) {
+            // Check if category is a number
+            if (!is_numeric($category)) {
                 return response()->json([
                     'message' => 'Category ID must be a number'
                 ], 422);
             }
 
-            $temp = RecipeModel::where('recipe_categories_id', $category)
-                ->paginate($perPage);
+            $query->where('recipe_categories_id', $category);
+        }
+        if ($sortByRating == 'desc' || $sortByRating == 'asc') {
+            $query->leftJoin('recipes_rating', 'recipes.recipes_id', '=', 'recipes_rating.recipes_id')
+                ->select('recipes.*', DB::raw('AVG(recipes_rating.rating_value) as average_rating'))
+                ->groupBy('recipes.recipes_id')
+                ->orderBy('average_rating', $sortByRating);
+        }
 
-            if($temp->isEmpty()){
-                return response()->json([
-                    'message' => 'No recipes found',
-                    'data' => RecipesResource::collection($data)
-                ], 404);
-            }
+        $data = $query->paginate($perPage);
 
-            $data = $temp;
+        if ($data->isEmpty()) {
+            return response()->json([
+                'message' => 'No recipes found',
+                'data' => []
+            ], 404);
         }
 
         $data = RecipesResource::collection($data);
 
-        return RecipesResource::collection($data)->additional([
+        return $data->additional([
             'meta' => [
                 'current_page' => $data->currentPage(),
                 'last_page' => $data->lastPage(),
