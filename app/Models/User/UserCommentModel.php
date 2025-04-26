@@ -42,12 +42,12 @@ class UserCommentModel extends Model
 
     public function reactions()
     {
-        return $this->hasMany(CommentReactionModel::class, 'user_id', 'users_comment_id');
+        return $this->hasMany(CommentReactionModel::class, 'comment_id', 'users_comment_id');
     }
 
-    public function parentComment()
+
+    public function reactCount()
     {
-        return $this->belongsTo(UserCommentModel::class, 'parent_comment_id', 'users_comment_id');
+        return $this->hasMany(CommentReactionModel::class, 'comment_id', 'users_comment_id')->count();
     }
-
 }

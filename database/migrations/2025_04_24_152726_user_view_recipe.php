@@ -11,18 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('notifications', function (Blueprint $table) {
-            $table->id('notifications_id');
-            $table->string('title');
-            $table->text('body');
-            $table->string('type')->nullable();
-            $table->boolean('is_read')->default(false);
-            $table->foreignId('user_id')
+        Schema::create('user_view_recipe', function (Blueprint $table){
+            $table->id('user_view_recipe_id');
+            $table->foreignId('user_profile_id')
                 ->constrained('user_profile', 'user_profile_id')
-                ->cascadeOnDelete();
+                ->onDelete('cascade');
+            $table->foreignId('recipe_id')
+                ->constrained('recipes', 'recipes_id')
+                ->onDelete('cascade');
             $table->timestamps();
         });
-
     }
 
     /**
@@ -30,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('notifications');
+        Schema::dropIfExists('user_view_recipe');
     }
 };

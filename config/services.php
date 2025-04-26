@@ -34,4 +34,8 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL', null),
         ],
     ],
+    'fcm' => [
+        'project_id' => env('FCM_PROJECT_ID'),
+    ],
+
 ];

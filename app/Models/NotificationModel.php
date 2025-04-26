@@ -6,18 +6,19 @@ use Illuminate\Database\Eloquent\Model;
 
 class NotificationModel extends Model
 {
+
     protected $table = 'notifications';
     protected $primaryKey = 'notifications_id';
     protected $fillable = [
         'title',
-        'message',
+        'body',
         'type',
-        'is_global',
-        'expires_at',
+        'is_read',
+        'user_id'
     ];
 
-    public function userNotifications(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function user()
     {
-        return $this->hasMany(UserNotificationModel::class, 'notification_id', 'notifications_id');
+        return $this->belongsTo(UserProfileModel::class, 'user_id', 'user_profile_id');
     }
 }
