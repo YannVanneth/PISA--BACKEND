@@ -62,4 +62,9 @@ class RecipeModel extends Model
         return $this->hasMany(UserCommentModel::class, 'recipes_id', 'recipes_id');
     }
 
+    public  function ratings()
+    {
+        return $this->hasMany(RecipeRatingModel::class, 'recipes_id', 'recipes_id');
+    }
+
 }

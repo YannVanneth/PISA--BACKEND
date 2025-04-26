@@ -1,9 +1,11 @@
 <?php
 
+use App\Events\UserNotification;
 use App\Http\Controllers\api\v1\CookingInstruction\CookingStepController;
 use App\Http\Controllers\api\v1\Ingredient\IngredientController;
 use App\Http\Controllers\api\v1\Recipes\RecipeCategoryController;
 use App\Http\Controllers\api\v1\Recipes\RecipeFavoriteController;
+use App\Http\Controllers\api\v1\Recipes\RecipeRatingController;
 use App\Http\Controllers\api\v1\Recipes\RecipesController;
 use App\Http\Controllers\api\v1\Search\SearchController;
 use App\Http\Controllers\api\v1\User\UserProfileController;
@@ -50,6 +52,7 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(callback: function () {
     Route::resource('wishlists',WishlistController::class);
     # Notification Routes
     Route::resource('notifications', NotificationController::class);
+    Route::resource('rating',RecipeRatingController::class);
 
     # User Profile Routes
     Route::prefix('user-profile')->group(function (){
