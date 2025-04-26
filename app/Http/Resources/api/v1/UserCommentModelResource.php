@@ -23,7 +23,9 @@ class UserCommentModelResource extends JsonResource
             'is_verified' => $this->is_verified,
             'replies' => UserCommentModelResource::collection($this->whenLoaded('replies')),
             'contents' => $this->content,
-            'is_liked' => $this->reactions()->where('user_id', auth()->id())->exists(),
+            'is_liked' => $this->reactions()
+                ->where('user_id', auth()->id())
+                ->where('is_liked', true)->exists(),
             'parent_comment_id' => new UserCommentModelResource($this->parentComment),
             'created_at' => $this->created_at ? $this->created_at->toDateTimeString() : null,
             'updated_at' => $this->updated_at ? $this->updated_at->toDateTimeString() : null,

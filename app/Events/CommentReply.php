@@ -16,15 +16,13 @@ class CommentReply
     /**
      * Create a new event instance.
      */
-    public UserProfileModel $user;
+    public UserProfileModel $replyTo;
     public UserCommentModel $replyComment;
-    public UserCommentModel $parentComment;
 
-    public function __construct(UserProfileModel $user, UserCommentModel $replyTo, UserCommentModel $parentComment)
+    public function __construct(UserCommentModel $replyTo, UserCommentModel $replyComment)
     {
-        $this->user = $user;
-        $this->replyComment = $replyTo;
-        $this->parentComment = $parentComment;
+        $this->$replyTo = $replyTo;
+        $this->$replyComment = $replyComment;
     }
 
     /**
@@ -36,7 +34,7 @@ class CommentReply
     {
         # broadcast to the user who is being replied to
         return [
-            new Channel('user.' .$this->user->user_profile_id),
+            new Channel('pisa-users.' . $this->replyTo->user_profile_id),
         ];
     }
 
@@ -59,17 +57,19 @@ class CommentReply
 
     public function broadcastWith(): array
     {
-        # return with user comment data
         return [
-            'user' => $this->user,
-            'replyComment' => $this->replyComment,
-            'parentComment' => $this->parentComment,
+            'title' => $this->notification->title,
+            'message' => $this->notification->body,
+            'date' => $this->notification->created_at->format('d M Y'),
+            'time' => $this->notification->created_at->format('H:i A'),
+            'is_read' => $this->notification->is_read,
+            'type' => $this->notification->type,
         ];
     }
 
     public function broadcastWhen(): bool
     {
         # check if the user is not the same as the one who replied
-        return $this->user->user_profile_id !== $this->replyComment->profile_id;
+        return $this->replyTo->user_profile_id !== $this->replyComment->profile_id;
     }
 }

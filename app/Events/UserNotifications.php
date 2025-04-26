@@ -5,13 +5,12 @@ namespace App\Events;
 use App\Models\NotificationModel;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
-use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class UserNotifications implements ShouldBroadcast
+class UserNotifications implements ShouldBroadcast , ShouldQueue
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -19,9 +18,14 @@ class UserNotifications implements ShouldBroadcast
      * Create a new event instance.
      */
     public NotificationModel $notification;
-    public function __construct(NotificationModel $notification)
+    public String $channel;
+    public String $eventName;
+    public function __construct(NotificationModel $notification, String $channel = 'pisa-users', String $eventName = 'user.notifications')
     {
         $this->notification = $notification;
+        $this->channel = $channel;
+        $this->eventName = $eventName;
+
     }
 
     /**
@@ -32,7 +36,7 @@ class UserNotifications implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new Channel('pisa-users'),
+            new Channel($this->channel),
         ];
     }
 
@@ -43,7 +47,7 @@ class UserNotifications implements ShouldBroadcast
      */
 
     public function broadcastAs(): string    {
-        return 'user.notifications';
+        return $this->eventName;
     }
 
     /**

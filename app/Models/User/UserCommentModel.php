@@ -48,6 +48,13 @@ class UserCommentModel extends Model
 
     public function reactCount()
     {
-        return $this->hasMany(CommentReactionModel::class, 'comment_id', 'users_comment_id')->count();
+        return $this->hasMany(CommentReactionModel::class, 'comment_id', 'users_comment_id')->where(
+            'is_liked' , true
+        )->count();
+    }
+
+    public function parentComment()
+    {
+        return $this->belongsTo(UserCommentModel::class, 'parent_comment_id', 'users_comment_id');
     }
 }

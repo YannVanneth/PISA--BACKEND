@@ -7,8 +7,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\api\v1\UserCommentModelResource;
 use App\Models\User\CommentReactionModel;
 use App\Models\User\UserCommentModel;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class UserCommentController extends Controller
 {
@@ -19,7 +21,6 @@ class UserCommentController extends Controller
         if ($recipeId) {
             $comments = UserCommentModel::with(['profile', 'replies.profile','replies.parentComment.profile'])
                 ->where('recipe_id', $recipeId)
-                ->whereNull('parent_comment_id')
                 ->orderBy('created_at', 'asc')
                 ->get();
 
@@ -85,6 +86,17 @@ class UserCommentController extends Controller
             }
             DB::commit();
 
+            if($reaction->is_liked) {
+                $notification = new \App\Models\NotificationModel();
+                $notification->title = 'Someone liked your comment';
+                $notification->body = auth()->user()->first_name . ' liked your comment: ' . Str::limit($userComment->content, 50);
+                $notification->type = 'announcement';
+                $notification->is_read = false;
+                $notification->user_id = $userComment->profile_id;
+                $notification->save();
+                NotificationService::sendNotification($notification, "pisa-users." . $notification->user_id, 'comment.like');
+            }
+
             return response()->json([
                 'message' => 'Reaction updated successfully',
                 'data' => $reaction
@@ -119,6 +131,19 @@ class UserCommentController extends Controller
             $userComment->load('replies');
 
             broadcast(new CommentPost($userComment));
+
+            if($request->parent_comment_id != null) {
+                $notification = new \App\Models\NotificationModel();
+                $notification->title = 'Someone replied to your comment';
+                $notification->body = $userComment->profile->first_name . ' replied to your comment: ' . Str::limit($userComment->content, 50);
+                $notification->type = 'announcement';
+                $notification->is_read = false;
+                $parentComment = UserCommentModel::find($request->parent_comment_id);
+                $notification->user_id = $parentComment->profile_id;
+                $notification->save();
+
+                NotificationService::sendNotification($notification, "pisa-users." . $notification->user_id, 'comment.reply');
+            }
 
             DB::commit();
 
