@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\api\v1;
 
+use DateTimeInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Auth;
@@ -27,8 +28,8 @@ class UserCommentModelResource extends JsonResource
                 ->where('user_id', auth()->id())
                 ->where('is_liked', true)->exists(),
             'parent_comment_id' => new UserCommentModelResource($this->parentComment),
-            'created_at' => $this->created_at ? $this->created_at->toDateTimeString() : null,
-            'updated_at' => $this->updated_at ? $this->updated_at->toDateTimeString() : null,
+            'created_at' => $this->created_at ? $this->created_at->format(DateTimeInterface::ISO8601) : null,
+            'updated_at' => $this->updated_at ? $this->updated_at->format(DateTimeInterface::ISO8601) : null,
         ];
     }
 }

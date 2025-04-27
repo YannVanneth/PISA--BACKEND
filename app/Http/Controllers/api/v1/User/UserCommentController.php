@@ -5,6 +5,7 @@ namespace App\Http\Controllers\api\v1\User;
 use App\Events\CommentPost;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\api\v1\UserCommentModelResource;
+use App\Models\NotificationModel;
 use App\Models\User\CommentReactionModel;
 use App\Models\User\UserCommentModel;
 use App\Services\NotificationService;
@@ -86,15 +87,19 @@ class UserCommentController extends Controller
             }
             DB::commit();
 
-            if($reaction->is_liked) {
+
+            if($request->is_liked) {
                 $notification = new \App\Models\NotificationModel();
                 $notification->title = 'Someone liked your comment';
                 $notification->body = auth()->user()->first_name . ' liked your comment: ' . Str::limit($userComment->content, 50);
                 $notification->type = 'announcement';
                 $notification->is_read = false;
                 $notification->user_id = $userComment->profile_id;
-                $notification->save();
-                NotificationService::sendNotification($notification, "pisa-users." . $notification->user_id, 'comment.like');
+
+                if($notification->user_id != auth()->id()) {
+                    $notification->save();
+                    NotificationService::sendNotification($notification, "pisa-users." . $notification->user_id, 'comment.like');
+                }
             }
 
             return response()->json([
@@ -140,9 +145,11 @@ class UserCommentController extends Controller
                 $notification->is_read = false;
                 $parentComment = UserCommentModel::find($request->parent_comment_id);
                 $notification->user_id = $parentComment->profile_id;
-                $notification->save();
 
-                NotificationService::sendNotification($notification, "pisa-users." . $notification->user_id, 'comment.reply');
+                if($notification->user_id != auth()->id()) {
+                    $notification->save();
+                    NotificationService::sendNotification($notification, "pisa-users." . $notification->user_id, 'comment.reply');
+                }
             }
 
             DB::commit();

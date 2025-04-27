@@ -58,6 +58,7 @@ class UserNotifications implements ShouldBroadcast , ShouldQueue
 
     public function broadcastWith(): array    {
         return [
+            'id' => $this->notification->id,
             'title' => $this->notification->title,
             'message' => $this->notification->body,
             'date' => $this->notification->created_at->format('d M Y'),
@@ -66,4 +67,13 @@ class UserNotifications implements ShouldBroadcast , ShouldQueue
             'type' => $this->notification->type,
         ];
     }
+
+    public function dontBroadcastToCurrentUser(): bool
+    {
+        return true;
+    }
+
+
+
+
 }
