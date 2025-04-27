@@ -5,6 +5,7 @@ namespace App\Events;
 use App\Http\Resources\api\v1\UserCommentModelResource;
 use App\Models\User\UserCommentModel;
 use App\Models\User\UserProfileModel;
+use DateTimeInterface;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
@@ -71,10 +72,21 @@ class CommentPost implements ShouldBroadcast
             'contents' => $this->comment->content,
             'is_liked' => $this->comment->is_liked ?? false,
             'parent_comment_id' => $this->comment->parent_comment_id,
-            'created_at' => $this->comment->created_at->format('Y-m-d H:i:s'),
-            'updated_at' => $this->comment->updated_at->format('Y-m-d H:i:s'),
+            'created_at' => $this->comment->created_at->format(DateTimeInterface::ISO8601),
+            'updated_at' => $this->comment->updated_at->format(DateTimeInterface::ISO8601),
         ];
     }
+
+    public function broadcastToEveryone()
+    {
+        return true;
+    }
+
+    public function dontBroadcastToCurrentUser(): bool
+    {
+        return true;
+    }
+
 
 
 }
