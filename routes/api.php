@@ -8,11 +8,11 @@ use App\Http\Controllers\api\v1\Recipes\RecipeFavoriteController;
 use App\Http\Controllers\api\v1\Recipes\RecipeRatingController;
 use App\Http\Controllers\api\v1\Recipes\RecipesController;
 use App\Http\Controllers\api\v1\Search\SearchController;
-use App\Http\Controllers\api\v1\User\UserCommentController;
 use App\Http\Controllers\api\v1\User\UserProfileController;
 use App\Http\Controllers\api\v1\WishList\WishListController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\mail\MailController;
+use App\Http\Controllers\Notification\NotificationController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
@@ -50,6 +50,8 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(callback: function () {
     Route::resource('recipes', RecipesController::class);
     Route::resource('ingredients', IngredientController::class);
     Route::resource('wishlists',WishlistController::class);
+    # Notification Routes
+    Route::resource('notifications', NotificationController::class);
     Route::resource('rating',RecipeRatingController::class);
 
     # User Profile Routes
@@ -77,23 +79,24 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(callback: function () {
     require __DIR__ . '/comment.php';
 });
 
-
-Route::get('test', function (){
-    event(new UserNotification("Someone replied to your comment!"
-        , "@David  is react your comment"
-        , "assignment"
-        , "1"));
-
-//    event(new UserNotification("From Dev Team."
-//        , "We are happy to inform you that you has been the first to comment on this recipe."
-//        , "assignment"
-//        , "1"));
-
-
-//    event(new \App\Events\UserNotification("Someone replied to your comment!", "@David react is react your comment", "assignment", "1"));
-    return response()->json(['message' => 'Event has been sent']);
-});
+Route::post('/send-notification', [\App\Http\Controllers\FcmController::class, 'sendFcmNotification']);
+Route::post('/send-topic-notification', [NotificationController::class, 'sendToTopic']);
 //->middleware(['auth:sanctum'])->
 
+Route::get('test', function () {
+    $notification = new \App\Models\NotificationModel();
+    $notification->title = 'Test Notification';
+    $notification->body = 'This is a test notification';
+    $notification->type = 'announcement';
+    $notification->is_read = false;
+    $notification->user_id = 1; // Assuming user_id is 1 for testing
+    $notification->save();
+    \App\Services\NotificationService::sendNotification($notification);
+});
+
+
+Route::get('test-comment', function (){
+
+});
 //require __DIR__ . '/auth.php';
 

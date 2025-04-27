@@ -2,6 +2,7 @@
 
 namespace App\Models\User;
 
+use App\Models\NotificationModel;
 use App\Models\Recipes\RecipeFavoriteModel;
 use App\Models\Recipes\RecipeRatingModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -53,5 +54,10 @@ class UserProfileModel extends Authenticatable
     public function favorites()
     {
     return $this->hasMany(RecipeFavoriteModel::class, 'profile_id', 'user_profile_id');
+    }
+
+    public function notifications()
+    {
+        return $this->hasMany(NotificationModel::class, 'user_id', 'user_profile_id');
     }
 }

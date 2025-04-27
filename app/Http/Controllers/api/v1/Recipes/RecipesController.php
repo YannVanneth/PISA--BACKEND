@@ -5,6 +5,7 @@ namespace App\Http\Controllers\api\v1\Recipes;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\api\v1\RecipesResource;
 use App\Models\Recipes\RecipeModel;
+use App\Models\User\UserViewRecipe;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -65,6 +66,45 @@ class RecipesController extends Controller
             ]
         ]);
     }
+
+    public function UserViewing(Request $request)
+    {
+        try {
+            $request->validate([
+                'recipes_id' => 'required|integer',
+            ]);
+
+            $found = RecipeModel::find($request->recipes_id);
+
+            if (!$found) {
+                return response()->json([
+                    'message' => 'Recipe not found'
+                ], 404);
+            }
+
+            $view = UserViewRecipe::updateOrCreate(
+                [
+                    'user_profile_id' => $request->user()->user_profile_id,
+                    'recipe_id' => $request->recipes_id,
+                ]
+            );
+
+            if ($view->wasRecentlyCreated) {
+                $found->increment('view_counts');
+            }
+
+            return response()->json([
+                'message' => 'View counts updated successfully',
+                'data' => $found
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'An error occurred: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
 
     /**
      * Store a newly created resource in storage.
