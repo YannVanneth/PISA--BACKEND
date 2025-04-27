@@ -29,7 +29,8 @@ class RecipesResource extends JsonResource
             'is_breakfast' => $this->is_breakfast,
             'ingredients' => IngredientResource::collection($this->ingredients),
             'cooking_steps' => CookingStepsResource::collection($this->cookingSteps),
-            'favorites' => RecipeFavoriteResource::collection($this->favorites)
+            'favorites' => RecipeFavoriteResource::collection($this->favorites),
+            'recipes_rating' => RecipeRatingResource::collection($this->ratings),
         ];
     }
 }
