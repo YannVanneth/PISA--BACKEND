@@ -36,7 +36,7 @@ class SearchController extends Controller
         }
 
         // Fetch recipes and ensure uniqueness
-        $recipes = RecipeModel::with(['category', 'cookingInstructions', 'cookingSteps', 'ingredients'])
+        $recipes = RecipeModel::with(['category', 'cookingSteps', 'ingredients'])
             ->whereHas('ingredients', function ($query) use ($matchedIngredientIds) {
                 $query->whereIn('ingredients_id', $matchedIngredientIds);
             })
@@ -73,7 +73,7 @@ class SearchController extends Controller
         }
 
         // Get recipes and ensure no duplicates
-        $recipes = RecipeModel::with(['category', 'cookingInstructions', 'cookingSteps', 'ingredients'])
+        $recipes = RecipeModel::with(['category', 'cookingSteps', 'ingredients'])
             ->whereIn('recipe_categories_id', $categoryIds)
             ->get()
             ->unique('recipes_id'); // Ensure uniqueness by recipe ID
@@ -91,7 +91,7 @@ class SearchController extends Controller
         $userInput = strtolower(trim($request->input('recipeName')));
 
         // Get all recipes with Khmer and English titles
-        $allRecipes = RecipeModel::with(['category', 'cookingInstructions', 'cookingSteps', 'ingredients'])->get();
+        $allRecipes = RecipeModel::with(['category', 'cookingSteps', 'ingredients'])->get();
 
         // Filter recipes based on character count validation
         $filteredRecipes = $allRecipes->filter(function ($recipe) use ($userInput) {
@@ -175,7 +175,7 @@ class SearchController extends Controller
         if ($allRecipeIds->isEmpty()) {
             return response()->json(['message' => 'No recipes found for these ingredients or name.'], 404);
         }
-        $recipes = RecipeModel::with(['category', 'cookingInstructions', 'cookingSteps', 'ingredients'])
+        $recipes = RecipeModel::with(['category', 'cookingSteps', 'ingredients'])
             ->whereIn('recipes_id', $allRecipeIds)
             ->get();
 
