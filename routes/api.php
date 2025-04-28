@@ -31,6 +31,7 @@ Route::prefix('auth')->group(function () {
 
     Route::get('/verifyOTP', [MailController::class, 'verifyOTP']);
     Route::get('/RegisterVerifyOTP', [MailController::class, 'RegisterMail']);
+    Route::get('/forgotPassword', [MailController::class, 'forgotMail']);
 
     # logout route
     Route::post('/logout', [AuthController::class, 'logout']);

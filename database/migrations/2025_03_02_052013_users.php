@@ -27,12 +27,14 @@ return new class extends Migration
         });
 
         Schema::create('admin', function (Blueprint $table) {
-            $table->id('admin_id')->primary();
-            $table->string('username');
-            $table->string('password');
+            $table->id('admin_id');
+            $table->string('name');
             $table->string('email')->unique();
+            $table->timestamp('email_verified_at')->nullable();
+            $table->string('password');
             $table->foreignId('profile_id')
                 ->constrained('user_profile', 'user_profile_id');
+            $table->rememberToken();
             $table->timestamps();
         });
 
