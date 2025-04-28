@@ -21,21 +21,13 @@ class AuthController extends Controller
     public function cancelRegistration(Request $request)
     {
         try {
-
             $request->validate([
-                'email' => 'required|email',
+                'email' => 'required|string',
             ]);
+
             $email = $request->input('email');
 
             DB::transaction(function () use ($email) {
-                DB::table('users')
-                    ->whereIn('profile_id', function ($query) use ($email) {
-                        $query->select('user_profile_id')
-                            ->from('user_profile')
-                            ->where('email', $email)
-                            ->where('is_verified', 0);
-                    })
-                    ->delete();
 
                 DB::table('user_profile')
                     ->where('email', $email)
