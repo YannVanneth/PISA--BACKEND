@@ -59,7 +59,6 @@ class MailController extends Controller
     public function RegisterMail(Request $request)
     {
         try {
-
             $receiver = $request->query('email');
             $isResend = $request->query('isResend');
 
@@ -81,6 +80,7 @@ class MailController extends Controller
                 $user->otp_code,
                 $user->first_name . " " . $user->last_name,
                 10,
+                true,
                 true,
 
             ));
