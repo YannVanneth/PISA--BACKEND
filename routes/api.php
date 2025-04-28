@@ -79,6 +79,20 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(callback: function () {
 
     require __DIR__ . '/comment.php';
 });
+Route::prefix('v1/set-rating')->group(function () {
+    // Specific routes first
+    Route::get('ratings/by-profile/{profile_id}', [RecipeRatingController::class, 'getByProfile']);
+    Route::get('show-rating', [RecipeRatingController::class, 'getByRecipeAndProfile']);
+    Route::get('show-by-recipe', [RecipeRatingController::class, 'getByRecipe']);
+
+    // General routes after
+    Route::get('ratings', [RecipeRatingController::class, 'index']);
+    Route::post('ratings', [RecipeRatingController::class, 'store']);
+    Route::get('ratings/{id}', [RecipeRatingController::class, 'show']);
+    Route::put('ratings/{id}', [RecipeRatingController::class, 'update']);
+    Route::delete('ratings/{id}', [RecipeRatingController::class, 'destroy']);
+
+});
 
 Route::post('/send-notification', [\App\Http\Controllers\FcmController::class, 'sendFcmNotification']);
 Route::post('/send-topic-notification', [NotificationController::class, 'sendToTopic']);
