@@ -179,7 +179,7 @@ class AuthController extends Controller
         }
 
         try {
-            $tokenInfo = Http::withOptions(['verify' => false])->get(
+            $tokenInfo = Http::withOptions(['verify' => Storage::path('cacert.pem')])->get(
                 'https://oauth2.googleapis.com/tokeninfo?id_token=' . $idToken
             );
 
