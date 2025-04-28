@@ -179,7 +179,7 @@ class AuthController extends Controller
         }
 
         try {
-            $tokenInfo = Http::withOptions(['verify' => Storage::path('cacert.pem')])->get(
+            $tokenInfo = Http::withOptions(['verify' => 'storage/app/private/cacert.pem'])->get(
                 'https://oauth2.googleapis.com/tokeninfo?id_token=' . $idToken
             );
 
@@ -260,7 +260,7 @@ class AuthController extends Controller
 
         try {
             $tokenInfo = Http::withOptions([
-                'verify' => Storage::path('cacert.pem'),
+                'verify' => 'storage/app/private/cacert.pem',
             ])->get('https://graph.facebook.com/me?fields=id,name,email,picture&access_token=' . $accessToken);
 
             if ($tokenInfo->getStatusCode() !== 200) {
