@@ -222,18 +222,24 @@
                 <img src="https://lh3.googleusercontent.com/fife/ALs6j_GrDHPa7t90XqpbGhTMYKLUp7Uk2Bwuxt0NBF29nsuOMGOnA3__IzJ9Lm0htrE7F8s1WZquOkEIENAO7lsqyPkTUdh8QUp8AXHPR82_br3LaBCuDwHGAu5wujZ01K3fKVbduTC8bbtaLXOf2V9wy_JiRpSTHy3TMQxm5e_52-e4Z07IakXLBiDzJIAP_9iDkXylJ7iFxt4tR9M9j-d_WAAXsW13W3x4K2fL6ccO0Rn-e-ERYmuKWnCT-68C3YPHe0FOMXKVxAmCAcwr4ObGJDA_D8bvS0cASZjfwH06uPvT57TmZNfiHnFMAXx9bsLL89zDG_YL4RfMmyxDOMD4YjRcWBiqBjdErd88Q_tXGyNsnBKMgh9FJrEPyxx9KOLn7FCgnajOyUEKu2KOAJNg8oPn8CdQ0qCOzjNW4_7RNmKd94Zge22NNEZ4Dgg8Ks-iWKc0F637cagv947MxUNE2ZozjrIftwh8S4OzAQ48Cev__xDRBAeTp5UoKYWuM4VHNqyRF3z0Qvj-b50gjLnEJpxiNcnG87jyXg0fiHPy1H6e5o613orp3wATSb5OQxowTIFFAklmITr-vW1eMBkUIy64k20hBFfRfjSytq6O0l0DYTur7a2w6zGga6nNXXjhfT3BwIGMx4ommpsBhQqaEBBMr38BXNOS0NslgKosG0Of3kUmW6xTnMUwWfzal5Suxh6zM0lnqY_f_nYJp26Wt06pALyiHw_oJO4bAduk2A8nFjDxWGDDuqvUG4AVD3Wvh03ovY6UIZ3o4PAhsLWEs8-pNUHpFlfPiKuOgiouWuk12SLpDU7OgJeZMc8ufCme_7vLcND28osYqK8979PzvE8E3Pbrv6vsWWjZQJQqLzM9HvLmiFYAJF1AHS9TNmBGDJ-j0-VLEjHDKlGUlA_ZddRuQ-1tGTa1sv-hPy0-tTftVt0xWdrBJWp1TrvWoGRS84XpAA9W3mI1wFtPBToZfdjm1BI8gJEFaVxBIWW-T3ASpFuWSM7lKNcOZwYOAorr_0FZ6ppXO2yQPrshNLHGspV-pOjwjY3ypXW4-LazRWh8RLFOiQKR-2t9Nvy70yo0uuLfrCupYZB-T319TR5k1U3kGgw4u48vTyuWYAzjwOuZRz16n0HgL5JL0eu_YyakLCuZ7NK5vw1S7Z9BhgAYjloMkSuDCG3LzGzGK0BsXuPuHLtRBiHDrMWXUc1OvUg3CDoHw59Yufd_Fdo83S5f05z-s-i9tA2BWDinRAGT8vmZGDRn2AUi-wAM5cauJW6rXHAwPnpJmhMl3r20s4kdDJ4AMIAeK4X5sIU_qN8o_Mrw67-6Q_XOXFUCsfdKiytIOdrG2lRA1rAKXE63smDRx78UtUX9X6rw_ZxZOmKAm4fcItn5uViCAIaJM9n_NnZ6_q7J5P_8qztPcpj7n4P0seNImfS6rQkM-rwhx4nMg5dOLYtQJDiV6KDwNRoeMwmjX9UIxaoR_fJYpD8vh8h0K_V0LZ0vqnCQzUtpaXMQ71yAGT7l95ZbbIj3t7ck0sunaA8p3mZnOB-4HqO9Hy08DKbNeV8L_YhySC5Tq5sVYntK2x4VjSLZzu2MWp1h1_0Kf8euCkbvCC1yI-3J-SIIHFMFjdqJtJp6MRVE2FaFv4RxPB01-AG-dnAvKCuPe-ai7kQ-KVAGHqP0ifZTmZpYAgNrFsKaf5YiEziRhqhwEh0tyn0H0ZIiIF2fz5l9Dg=w906-h793"
                      alt="PISA">
             </div>
+            @if($found)
             <h1 class="header-title">Verify Your Account</h1>
             <p class="header-subtitle">Security Verification Code</p>
-{{--            <div class="shield-icon">--}}
-{{--                <span>🔒</span>--}}
-{{--            </div>--}}
+            @else
+            <h1 class="header-title">Account Not Found</h1>
+            <p class="header-subtitle">No account found with this email</p>
+            @endif
         </div>
 
+
         <div class="email-body">
+
+            @if($isRegistered && $found)
             <p class="greeting">Dear {{ $username }},</p>
+            @endif
 
             <p class="message">{{$emailMessage ?? "We've received a request to access your account. To ensure it's really you and protect your account, please use the verification code below."}}</p>
-
+                @if($found)
             <div class="otp-container">
                 <div class="otp-box">
                     <div class="otp-label">Verification Code</div>
@@ -255,6 +261,7 @@
 
             <p class="message">For security reasons, please don't share this verification code with anyone, including our support team. Our staff will never ask for your verification code.</p>
         </div>
+        @endif
 
         <div class="email-footer">
             <p class="footer-text">© {{now()->year}} PISA. All rights reserved.</p>

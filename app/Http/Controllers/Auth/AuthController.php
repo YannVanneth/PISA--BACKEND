@@ -14,26 +14,20 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
+
 class AuthController extends Controller
 {
     public function cancelRegistration(Request $request)
     {
         try {
-
             $request->validate([
-                'email' => 'required|email',
+                'email' => 'required|string',
             ]);
+
             $email = $request->input('email');
 
             DB::transaction(function () use ($email) {
-                DB::table('users')
-                    ->whereIn('profile_id', function ($query) use ($email) {
-                        $query->select('user_profile_id')
-                            ->from('user_profile')
-                            ->where('email', $email)
-                            ->where('is_verified', 0);
-                    })
-                    ->delete();
 
                 DB::table('user_profile')
                     ->where('email', $email)
@@ -117,13 +111,6 @@ class AuthController extends Controller
             if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
                 $user = Auth::user();
                 $token = $user->createToken('auth_token')->plainTextToken;
-
-                $user->notify(new UserNotification(
-                    'Welcome Back!',
-                    'You have successfully logged in to your account.',
-                    'login',
-                    $user->user_profile_id
-                ));
 
                 return response()->json([
                     'message' => 'Login successful',
@@ -271,103 +258,87 @@ class AuthController extends Controller
     {
         $accessToken = $request->input('access_token');
 
-       try{
-           $tokenInfo = Http::withOptions(
-               ['verify' => false,]
-           )->get('https://graph.facebook.com/me?fields=id,name,email,picture&access_token=' . $accessToken);
+        try {
+            $tokenInfo = Http::withOptions([
+                'verify' => Storage::path('cacert.pem'),
+            ])->get('https://graph.facebook.com/me?fields=id,name,email,picture&access_token=' . $accessToken);
 
-          if ($tokenInfo->getStatusCode() !== 200) {
-            return response()->json(['error' => 'Invalid access token'], 401);
-          }
+            if ($tokenInfo->getStatusCode() !== 200) {
+                return response()->json(['error' => 'Invalid access token'], 401);
+            }
 
-           $user = UserProfileModel::where('email', $tokenInfo->json('email'))
-               ->where('provider', 'google')
-               ->first();
+            $user = UserProfileModel::where('email', $tokenInfo->json('email'))
+                ->where('provider', 'facebook')
+                ->first();
 
-              if ($user) {
+            if ($user) {
+                SocialLoginModel::create([
+                    'social_login_provider_id' => $tokenInfo->json('id'),
+                    'social_login_provider' => 'facebook',
+                    'access_token' => $accessToken,
+                    'profile_id' => $user->user_profile_id,
+                ]);
 
-                  SocialLoginModel::create(
-                      [
-                          'social_login_provider_id' => $tokenInfo->json('id'),
-                          'social_login_provider' => 'facebook',
-                      ],
-                      [
-                          'social_login_provider_id' => $tokenInfo->json('id'),
-                          'access_token' => $accessToken,
-                          'profile_id' => $user->user_profile_id,
-                      ]
-                  );
+                $token = $user->createToken('auth_token')->plainTextToken;
 
-                  $token = $user->createToken('auth_token')->plainTextToken;
+                return response()->json([
+                    'user_profile_id' => $user->user_profile_id,
+                    'message' => 'Login with Facebook successful',
+                    'token' => $token,
+                    'token_type' => 'bearer'
+                ], 200);
 
-                  return response()->json([
-                      'user_profile_id' => $user->user_profile_id,
-                      'message' => 'Login with Facebook successful',
-                      'token' => $token,
-                      'token_type' => 'bearer'
-                  ], 200);
+            } else {
+                try {
+                    DB::beginTransaction();
 
-              }else{
-                  try{
+                    $fullName = explode(' ', $tokenInfo->json('name'));
+                    $firstName = $fullName[0] ?? '';
+                    $lastName = $fullName[1] ?? '';
 
-                      DB::beginTransaction();
+                    $picture = $tokenInfo->json('picture')['data']['url'] ?? null;
 
-                      $firstName = explode(' ', $tokenInfo->json('name'))[0];
-                      $lastName = explode(' ', $tokenInfo->json('name'))[1];
-                      $picture = $tokenInfo->json('picture');
-                      $picture = $picture['data'];
-                      $picture = $picture['url'];
+                    $userProfile = UserProfileModel::create([
+                        'email' => $tokenInfo->json('email'),
+                        'provider' => 'facebook',
+                        'first_name' => $firstName,
+                        'last_name' => $lastName,
+                        'image_url' => $picture,
+                        'phone_number' => null,
+                        'password' => Hash::make($tokenInfo->json('id')),
+                        'is_verified' => true,
+                        'otp_code' => null,
+                        'otp_code_expire_at' => null,
+                    ]);
 
-                      $userProfile = UserProfileModel::create(
-                          [
-                              'email' => $tokenInfo->json('email'),
-                              'provider' => 'facebook',
-                          ],
-                          [
-                              'first_name' => $firstName,
-                              'last_name' => $lastName,
-                              'image_url' => $picture,
-                              'email' => $tokenInfo->json('email'),
-                              'phone_number' => null,
-                              'password' => Hash::make($tokenInfo->json('id')),
-                              'is_verified' => true,
-                              'otp_code' => null,
-                              'otp_code_expire_at' => null,
-                          ]
-                      );
+                    SocialLoginModel::create([
+                        'social_login_provider_id' => $tokenInfo->json('id'),
+                        'social_login_provider' => 'facebook',
+                        'access_token' => $accessToken,
+                        'profile_id' => $userProfile->user_profile_id,
+                    ]);
 
-                      SocialLoginModel::create(
-                          [
-                              'social_login_provider_id' => $tokenInfo->json('id'),
-                              'social_login_provider' => 'facebook',
-                          ],
-                          [
-                              'social_login_provider_id' => $tokenInfo->json('id'),
-                              'access_token' => $accessToken,
-                              'profile_id' => $userProfile->user_profile_id,
-                          ]
-                      );
+                    DB::commit();
 
-                      DB::commit();
+                    $token = $userProfile->createToken('auth_token')->plainTextToken;
 
-                      $token = $userProfile->createToken('auth_token')->plainTextToken;
+                    return response()->json([
+                        'user_profile_id' => $userProfile->user_profile_id,
+                        'message' => 'Login with Facebook successful',
+                        'token' => $token,
+                        'token_type' => 'Bearer'
+                    ], 200);
 
-                      return response()->json([
-                          'user_profile_id' => $userProfile->user_profile_id,
-                          'message' => 'Login with Facebook successful',
-                          'token' => $token,
-                          'token_type' => 'Bearer'
-                      ], 200);
-              }
-              catch (\Exception $exception){
-                     DB::rollBack();
-                     return response()->json(['error' => $exception->getMessage()], 500);
-               }
-           }
-       }catch (\Exception $e){
-           return response()->json(['error' => $e->getMessage()], 401);
-       }
+                } catch (\Exception $exception) {
+                    DB::rollBack();
+                    return response()->json(['error' => $exception->getMessage()], 500);
+                }
+            }
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 401);
+        }
     }
+
 
     # Logout
     public function logout(Request $request)

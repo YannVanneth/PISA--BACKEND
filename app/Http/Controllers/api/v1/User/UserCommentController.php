@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers\api\v1\User;
 
-use App\Events\CommentPosted;
+use App\Events\CommentPost;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\api\v1\UserCommentModelResource;
+use App\Models\NotificationModel;
 use App\Models\User\CommentReactionModel;
 use App\Models\User\UserCommentModel;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class UserCommentController extends Controller
 {
@@ -18,7 +22,6 @@ class UserCommentController extends Controller
         if ($recipeId) {
             $comments = UserCommentModel::with(['profile', 'replies.profile','replies.parentComment.profile'])
                 ->where('recipe_id', $recipeId)
-                ->whereNull('parent_comment_id')
                 ->orderBy('created_at', 'asc')
                 ->get();
 
@@ -39,9 +42,9 @@ class UserCommentController extends Controller
         ]);
     }
 
-    public function handleCommentReaction(Request $request){
-        try{
-
+    public function handleCommentReaction(Request $request)
+    {
+        try {
             $request->validate([
                 'comment_id' => 'required|integer',
                 'is_liked' => 'required|boolean',
@@ -52,8 +55,14 @@ class UserCommentController extends Controller
             if (!$userComment) {
                 return response()->json([
                     'message' => 'Comment not found',
+                    'error' => 'Comment not found'
                 ], 404);
             }
+
+            DB::beginTransaction();
+            $existingReaction = CommentReactionModel::where('comment_id', $request->comment_id)
+                ->where('user_id', auth()->id())
+                ->first();
 
             $reaction = CommentReactionModel::updateOrCreate(
                 [
@@ -65,55 +74,98 @@ class UserCommentController extends Controller
                 ]
             );
 
+            $comment = UserCommentModel::find($request->comment_id);
+
+            if ($existingReaction) {
+                if ($request->is_liked) {
+                    $comment->increment('react_count');
+                } else {
+                    $comment->decrement('react_count');
+                }
+            } else {
+                $comment->increment('react_count');
+            }
+            DB::commit();
+
+
+            if($request->is_liked) {
+                $notification = new \App\Models\NotificationModel();
+                $notification->title = 'Someone liked your comment';
+                $notification->body = auth()->user()->first_name . ' liked your comment: ' . Str::limit($userComment->content, 50);
+                $notification->type = 'announcement';
+                $notification->is_read = false;
+                $notification->user_id = $userComment->profile_id;
+
+                if($notification->user_id != auth()->id()) {
+                    $notification->save();
+                    NotificationService::sendNotification($notification, "pisa-users." . $notification->user_id, 'comment.like');
+                }
+            }
+
             return response()->json([
                 'message' => 'Reaction updated successfully',
                 'data' => $reaction
             ]);
 
-        }catch (\Exception $exception){
+        } catch (\Exception $exception) {
+            DB::rollBack();
             return response()->json([
                 'error' => $exception->getMessage(),
-                'message' => 'Ops! Something when wrong!'
+                'message' => 'Oops! Something went wrong!'
             ], 500);
         }
     }
+
     public function handleComment(Request $request)
     {
-        try{
+        try {
+            DB::beginTransaction();
 
-            /*
-             * Validate the request
-             *
-             * require :
-             *    - recipes_id
-             *    - contents
-             *    - profile_id
-             * */
-
-
-            $request->validate(
-                [
-                    'recipes_id' => 'required',
-                    'contents' => 'required|string|max:1000',
-                ]);
+            $request->validate([
+                'recipes_id' => 'required',
+                'contents' => 'required|string|max:1000',
+            ]);
 
             $userComment = UserCommentModel::create([
                 'recipe_id' => $request->recipes_id,
-                'profile_id' => auth()->id,
+                'profile_id' => auth()->id(),
                 'content' => $request->contents,
                 'parent_comment_id' => $request->parent_comment_id ?? null,
             ]);
 
+            $userComment->load('replies');
+
+            broadcast(new CommentPost($userComment));
+
+            if($request->parent_comment_id != null) {
+                $notification = new \App\Models\NotificationModel();
+                $notification->title = 'Someone replied to your comment';
+                $notification->body = $userComment->profile->first_name . ' replied to your comment: ' . Str::limit($userComment->content, 50);
+                $notification->type = 'announcement';
+                $notification->is_read = false;
+                $parentComment = UserCommentModel::find($request->parent_comment_id);
+                $notification->user_id = $parentComment->profile_id;
+
+                if($notification->user_id != auth()->id()) {
+                    $notification->save();
+                    NotificationService::sendNotification($notification, "pisa-users." . $notification->user_id, 'comment.reply');
+                }
+            }
+
+            DB::commit();
+
             return response()->json([
                 'message' => 'Comment posted successfully',
-                'data' => new UsercommentModelResource($userComment)
+                'data' => new UserCommentModelResource($userComment),
             ]);
 
-        }catch (\Exception $exception){
+        } catch (\Exception $exception) {
+            DB::rollBack();
             return response()->json([
                 'error' => $exception->getMessage(),
-                'message' => 'Ops! Something when wrong!'
+                'message' => 'Ops! Something went wrong!',
             ], 500);
         }
     }
+
 }

@@ -5,8 +5,10 @@ namespace App\Http\Controllers\api\v1\Recipes;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\api\v1\RecipesResource;
 use App\Models\Recipes\RecipeModel;
+use App\Models\User\UserViewRecipe;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class RecipesController extends Controller
@@ -21,44 +23,41 @@ class RecipesController extends Controller
      */
     public function index(Request $request)
     {
-        $page = (int)$request->get('page', 1);
-        $perPage = (int)$request->get('per_page', 10);
         $category = $request->get('category_id', null);
+        $perPage = $request->query('per_page', 10);
+        $sortByRating = $request->query('sort_rating', null);
 
-        $data = RecipeModel::paginate($perPage,['*'], 'page', $page);
+        $query = RecipeModel::query()->with(['ratings', 'category', 'ingredients', 'cookingSteps', 'favorites']);
 
-        if($data->isEmpty()){
-            return response()->json([
-                'message' => 'No recipes found',
-                'data' => RecipesResource::collection($data)
-            ], 404);
-        }
-
-        if($category != null){
-
-            # check if category is a number
-            if(!is_numeric($category)){
+        if ($category != null) {
+            // Check if category is a number
+            if (!is_numeric($category)) {
                 return response()->json([
                     'message' => 'Category ID must be a number'
                 ], 422);
             }
 
-            $temp = RecipeModel::where('recipe_categories_id', $category)
-                ->paginate($perPage,['*'], 'page', $page);
+            $query->where('recipe_categories_id', $category);
+        }
+        if ($sortByRating == 'desc' || $sortByRating == 'asc') {
+            $query->leftJoin('recipes_rating', 'recipes.recipes_id', '=', 'recipes_rating.recipes_id')
+                ->select('recipes.*', DB::raw('AVG(recipes_rating.rating_value) as average_rating'))
+                ->groupBy('recipes.recipes_id')
+                ->orderBy('average_rating', $sortByRating);
+        }
 
-            if($temp->isEmpty()){
-                return response()->json([
-                    'message' => 'No recipes found',
-                    'data' => RecipesResource::collection($data)
-                ], 404);
-            }
+        $data = $query->paginate($perPage);
 
-            $data = $temp;
+        if ($data->isEmpty()) {
+            return response()->json([
+                'message' => 'No recipes found',
+                'data' => []
+            ], 404);
         }
 
         $data = RecipesResource::collection($data);
 
-        return RecipesResource::collection($data)->additional([
+        return $data->additional([
             'meta' => [
                 'current_page' => $data->currentPage(),
                 'last_page' => $data->lastPage(),
@@ -67,6 +66,45 @@ class RecipesController extends Controller
             ]
         ]);
     }
+
+    public function UserViewing(Request $request)
+    {
+        try {
+            $request->validate([
+                'recipes_id' => 'required|integer',
+            ]);
+
+            $found = RecipeModel::find($request->recipes_id);
+
+            if (!$found) {
+                return response()->json([
+                    'message' => 'Recipe not found'
+                ], 404);
+            }
+
+            $view = UserViewRecipe::updateOrCreate(
+                [
+                    'user_profile_id' => $request->user()->user_profile_id,
+                    'recipe_id' => $request->recipes_id,
+                ]
+            );
+
+            if ($view->wasRecentlyCreated) {
+                $found->increment('view_counts');
+            }
+
+            return response()->json([
+                'message' => 'View counts updated successfully',
+                'data' => $found
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'An error occurred: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
 
     /**
      * Store a newly created resource in storage.

@@ -38,11 +38,6 @@ class RecipeModel extends Model
         return $this->belongsTo(RecipeCategoryModel::class, 'recipe_categories_id', 'recipe_categories_id');
     }
 
-    public function cookingInstructions()
-    {
-        return $this->hasMany(CookingInstructionModel::class, 'recipes_id', 'recipes_id');
-    }
-
     public function cookingSteps()
     {
         return $this->hasMany(CookingStepModel::class, 'recipes_id', 'recipes_id');
@@ -60,6 +55,11 @@ class RecipeModel extends Model
     public function comments()
     {
         return $this->hasMany(UserCommentModel::class, 'recipes_id', 'recipes_id');
+    }
+
+    public  function ratings()
+    {
+        return $this->hasMany(RecipeRatingModel::class, 'recipes_id', 'recipes_id');
     }
 
 }

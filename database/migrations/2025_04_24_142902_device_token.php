@@ -11,18 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('notifications', function (Blueprint $table) {
-            $table->id('notifications_id');
-            $table->string('title');
-            $table->text('body');
-            $table->string('type')->nullable();
-            $table->boolean('is_read')->default(false);
-            $table->foreignId('user_id')
+        Schema::create('device_token', function (Blueprint $table) {
+            $table->id('device_token_id');
+            $table->string('device_token')->unique();
+            $table->foreignId('user_profile_id')
                 ->constrained('user_profile', 'user_profile_id')
-                ->cascadeOnDelete();
+                ->onDelete('cascade');
             $table->timestamps();
         });
-
     }
 
     /**
@@ -30,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('notifications');
+        Schema::dropIfExists('device_token');
     }
 };

@@ -19,16 +19,20 @@ class VerifyOTPMail extends Mailable
     public string $otp_code;
     public string $username;
     public string $expire_at;
+    public bool $isRegistered;
+    public bool $found = false;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(string $emailMessage, string $otp_code, string $username, string $expire_at)
+    public function __construct(string $emailMessage, string $otp_code = "", string $username = "", string $expire_at = "", bool $isRegistered = false, bool $found = false)
     {
         $this->emailMessage = $emailMessage;
         $this->otp_code = $otp_code;
         $this->username = $username;
         $this->expire_at = $expire_at;
+        $this->isRegistered = $isRegistered;
+        $this->found = $found;
     }
 
     /**
@@ -51,6 +55,8 @@ class VerifyOTPMail extends Mailable
             with:
             [
                 'emailMessage' => $this->emailMessage,
+                'isRegistered' => $this->isRegistered,
+                'found' => $this->found,
                 'otp_code' => $this->otp_code,
                 'username' => $this->username,
                 'expire_at' => $this->expire_at,
