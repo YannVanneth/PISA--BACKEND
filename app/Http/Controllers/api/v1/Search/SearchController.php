@@ -175,6 +175,7 @@ class SearchController extends Controller
         if ($allRecipeIds->isEmpty()) {
             return response()->json(['message' => 'No recipes found for these ingredients or name.'], 404);
         }
+
         $recipes = RecipeModel::with(['category', 'cookingSteps', 'ingredients'])
             ->whereIn('recipes_id', $allRecipeIds)
             ->get();
