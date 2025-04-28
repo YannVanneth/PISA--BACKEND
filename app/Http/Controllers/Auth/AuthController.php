@@ -125,45 +125,6 @@ class AuthController extends Controller
         }
     }
 
-    // Forgot password
-    public function forgotPassword(Request $request)
-    {
-        $request->validate(['email' => 'required|email']);
-
-        $status = Password::sendResetLink(
-            $request->only('email')
-        );
-
-        return $status === Password::RESET_LINK_SENT
-            ? response()->json(['message' => 'Reset link sent to your email'], 200)
-            : response()->json(['message' => 'Unable to send reset link'], 400);
-    }
-
-    // Reset password
-    public function resetPassword(Request $request)
-    {
-        $request->validate([
-            'token' => 'required',
-            'email' => 'required|email',
-            'password' => 'required|string|min:8|confirmed',
-        ]);
-
-        $status = Password::reset(
-            $request->only('email', 'password', 'password_confirmation', 'token'),
-            function ($user, $password) {
-                $user->forceFill([
-                    'password' => Hash::make($password),
-                ])->save();
-
-                event(new PasswordReset($user));
-            }
-        );
-
-        return $status === Password::PASSWORD_RESET
-            ? response()->json(['message' => 'Password reset successfully'], 200)
-            : response()->json(['message' => 'Unable to reset password'], 400);
-    }
-
     public function handleGoogleCallback(Request $request)
     {
         $accessToken = $request->input('access_token');
@@ -179,7 +140,10 @@ class AuthController extends Controller
         }
 
         try {
-            $tokenInfo = Http::withOptions(['verify' => 'storage/app/private/cacert.pem'])->get(
+//            $tokenInfo = Http::withOptions(['verify' => Storage::path('cacert.pem')])->get(
+//                'https://oauth2.googleapis.com/tokeninfo?id_token=' . $idToken
+//            );
+            $tokenInfo = Http::get(
                 'https://oauth2.googleapis.com/tokeninfo?id_token=' . $idToken
             );
 
@@ -259,9 +223,10 @@ class AuthController extends Controller
         $accessToken = $request->input('access_token');
 
         try {
-            $tokenInfo = Http::withOptions([
-                'verify' => 'storage/app/private/cacert.pem',
-            ])->get('https://graph.facebook.com/me?fields=id,name,email,picture&access_token=' . $accessToken);
+//            $tokenInfo = Http::withOptions([
+//                'verify' => Storage::path('cacert.pem'),
+//            ])->get('https://graph.facebook.com/me?fields=id,name,email,picture&access_token=' . $accessToken);
+      $tokenInfo = Http::get('https://graph.facebook.com/me?fields=id,name,email,picture&access_token=' . $accessToken);
 
             if ($tokenInfo->getStatusCode() !== 200) {
                 return response()->json(['error' => 'Invalid access token'], 401);

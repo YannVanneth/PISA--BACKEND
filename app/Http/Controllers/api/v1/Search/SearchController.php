@@ -91,7 +91,7 @@ class SearchController extends Controller
         $userInput = strtolower(trim($request->input('recipeName')));
 
         // Get all recipes with Khmer and English titles
-        $allRecipes = RecipeModel::with(['category', 'cookingInstructions', 'cookingSteps', 'ingredients'])->get();
+        $allRecipes = RecipeModel::with(['category', 'cookingSteps', 'ingredients'])->get();
 
         // Filter recipes based on character count validation
         $filteredRecipes = $allRecipes->filter(function ($recipe) use ($userInput) {

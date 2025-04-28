@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\api\v1\User;
 
 use App\Http\Controllers\Controller;
+use App\Models\User\UserModel;
 use App\Models\User\UserProfileModel;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class UserProfileController extends Controller
 {
@@ -103,11 +106,13 @@ class UserProfileController extends Controller
     public function checkExistingUser(Request $request)
     {
         try{
+            $username = $request->query('username');
             $email = $request->query('email');
 
             $user = UserProfileModel::where('email', $email)->first();
+            $username = UserModel::where('username', $username)->first();
 
-            if($user){
+            if($user || $username){
                 return response()->json([
                     'message' => 'Username or Email already exists',
                     'is_available' => false

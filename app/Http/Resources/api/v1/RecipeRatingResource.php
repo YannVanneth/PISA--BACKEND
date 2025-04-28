@@ -12,6 +12,7 @@ class RecipeRatingResource extends JsonResource
             'recipes_rating_id' => $this->recipes_rating_id,
             'recipes_id' => $this->recipes_id,
             'profile' => new UserProfileResource($this->profile),
+            'recipe' => new RecipesResource($this->whenLoaded('recipes')),
             'rating_value' => $this->rating_value,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
