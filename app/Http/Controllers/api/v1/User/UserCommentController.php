@@ -98,7 +98,7 @@ class UserCommentController extends Controller
 
                 if($notification->user_id != auth()->id()) {
                     $notification->save();
-                    NotificationService::sendNotification($notification, "pisa-users." . $notification->user_id, 'comment.like');
+//                    NotificationService::sendNotification($notification, "pisa-users." . $notification->user_id, 'comment.like');
                 }
             }
 
@@ -135,7 +135,7 @@ class UserCommentController extends Controller
 
             $userComment->load('replies');
 
-            broadcast(new CommentPost($userComment));
+//            broadcast(new CommentPost($userComment));
 
             if($request->parent_comment_id != null) {
                 $notification = new \App\Models\NotificationModel();
@@ -148,7 +148,7 @@ class UserCommentController extends Controller
 
                 if($notification->user_id != auth()->id()) {
                     $notification->save();
-                    NotificationService::sendNotification($notification, "pisa-users." . $notification->user_id, 'comment.reply');
+//                    NotificationService::sendNotification($notification, "pisa-users." . $notification->user_id, 'comment.reply');
                 }
             }
 
