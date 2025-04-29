@@ -143,7 +143,7 @@ class AuthController extends Controller
 //            $tokenInfo = Http::withOptions(['verify' => Storage::path('cacert.pem')])->get(
 //                'https://oauth2.googleapis.com/tokeninfo?id_token=' . $idToken
 //            );
-            $tokenInfo = Http::get(
+            $tokenInfo = Http::WithOptions(['verify' => false])->get(
                 'https://oauth2.googleapis.com/tokeninfo?id_token=' . $idToken
             );
 
@@ -226,7 +226,7 @@ class AuthController extends Controller
 //            $tokenInfo = Http::withOptions([
 //                'verify' => Storage::path('cacert.pem'),
 //            ])->get('https://graph.facebook.com/me?fields=id,name,email,picture&access_token=' . $accessToken);
-      $tokenInfo = Http::get('https://graph.facebook.com/me?fields=id,name,email,picture&access_token=' . $accessToken);
+      $tokenInfo = Http::WithOptions(['verify' => false])->get('https://graph.facebook.com/me?fields=id,name,email,picture&access_token=' . $accessToken);
 
             if ($tokenInfo->getStatusCode() !== 200) {
                 return response()->json(['error' => 'Invalid access token'], 401);
